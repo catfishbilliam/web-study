@@ -1,5 +1,5 @@
 // ====== CONFIG ======
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbyiaShvyv8Hhfp_n-qiGevmC50jFM3BGey_wtsbGGw242Ikc8POWkBNS4_VdVfVPapdTg/exec";
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbwJaswrvUTZMN_XseRLBT_4RvwlW8WzX9-6P3J00haf4n95UXOPHYIxcvDYKnQLJFsXPA/exec";
 const PROLIFIC_CODE = "CIXRDKFP"; // <-- set your actual completion code
 const PROLIFIC_COMPLETION_URL = `https://app.prolific.com/submissions/complete?cc=${encodeURIComponent(PROLIFIC_CODE)}`;
 const DEV_SHOW_REDIRECT = false; // set true to open Prolific in dev

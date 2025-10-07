@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Information Evaluation Study — Task</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Part 2: Brief Browsing Task</h1>
+    <p class="muted">Interact with the post, then rate it below.</p>
+
+    <!-- Post card with the real Instagram embed -->
+    <div id="feed" class="card">
+      <blockquote class="instagram-media"
+        data-instgrm-captioned
+        data-instgrm-permalink="https://www.instagram.com/reel/DPCI77UlWpA/?utm_source=ig_embed&amp;utm_campaign=loading"
+        data-instgrm-version="14"
+        style="background:#FFF; border:0; border-radius:3px;
+               box-shadow:0 0 1px 0 rgba(0,0,0,0.5),
+               0 1px 10px 0 rgba(0,0,0,0.15);
+               margin: 1px; max-width:540px; min-width:326px; padding:0; width:100%;">
+      </blockquote>
+      <script async src="https://www.instagram.com/embed.js"></script>
+
+      <div class="feed-actions" style="margin-top:12px;">
+        <button class="btn" data-action="like">Like</button>
+        <button class="btn" data-action="share">Share</button>
+        <button class="btn" data-action="report">Report</button>
+        <button class="btn" data-action="skip">Skip</button>
+      </div>
+    </div>
+
+    <!-- Ratings -->
+    <div class="card">
+      <div class="rating-row">
+        <label>Perceived accuracy (1 = not accurate, 5 = very accurate)</label>
+        <input id="accuracy" type="range" min="1" max="5" step="1" value="3" />
+      </div>
+      <div class="rating-row">
+        <label>Would you share this?</label>
+        <select id="shareIntent">
+          <option value="">Select…</option>
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </div>
+      <button id="submitTask" class="btn primary">Submit</button>
+    </div>
+
+    <!-- Debrief + completion -->
+    <div id="thanks" class="card hidden">
+      <h2>Thank you!</h2>
+      <p class="muted">Your responses were recorded.</p>
+
+      <h3>Debrief</h3>
+      <p>This study examines how people evaluate the accuracy of information and how personality traits and levels of trust may influence those judgments.
+      Some items can depict true or false claims; any false items (when used) are drawn from fact-checking archives (e.g., Snopes, Reuters Fact Check, PolitiFact) and are included only for research purposes.</p>
+      <p><strong>Epistemic mistrust</strong> refers to a general reluctance to accept information from others as credible (e.g., institutions, experts, or media). Understanding how mistrust relates to accuracy judgments can inform approaches to media literacy and misinformation resilience.</p>
+      <p>Your responses are anonymous and confidential. If you have questions, contact the investigator at <a href="mailto:wconway2@umd.edu">wconway2@umd.edu</a>.</p>
+
+      <hr />
+      <p><strong>Your Prolific completion code:</strong> <span id="code" class="code-pill">REPLACE_WITH_YOUR_CODE</span></p>
+      <p><a id="finishLink" class="btn primary" href="#" target="_blank" rel="noopener">Finish on Prolific</a></p>
+
+      <details>
+        <summary>Debug payload</summary>
+        <pre id="dump"></pre>
+      </details>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
