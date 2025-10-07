@@ -10,28 +10,28 @@
   <div class="container">
     <h1>Part 1: Survey</h1>
     <p class="muted">
-      Please complete the brief survey below. When finished, click “Continue to Part 2” to complete the browsing task.
+      Please complete the brief survey below. Once submitted, the button to continue will unlock automatically.
     </p>
 
     <!-- Embedded Google Form -->
     <iframe id="surveyFrame" class="form-frame" loading="lazy" title="Survey"></iframe>
 
     <div style="text-align:center; margin-top:20px;">
-      <button id="continueBtn" class="btn primary" disabled>Continue to Part 2</button>
+      <button id="continueBtn" class="btn disabled" disabled>Continue to Part 2</button>
       <p id="formStatus" class="muted small" style="margin-top:8px;">Please complete the survey first.</p>
     </div>
   </div>
 
   <script>
-    // Read Prolific params
+    // Read Prolific parameters
     const qs = new URLSearchParams(location.search);
     const PID = qs.get("PROLIFIC_PID") || "";
     const STUDY_ID = qs.get("STUDY_ID") || "";
     const SESSION_ID = qs.get("SESSION_ID") || "";
 
-    // Prefill your Google Form (embedded)
+    // Prefilled Google Form embed
     const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSfZSotW8pdpndlmkS53GGLxMPHwUCod10xghOydO30xXmwHHA/viewform";
-    const ENTRY_ID_FOR_PID = "entry.66279277"; // your PID field
+    const ENTRY_ID_FOR_PID = "entry.66279277"; // Prolific ID field
     const formUrl = PID
       ? `${FORM_BASE}?embedded=true&usp=pp_url&${ENTRY_ID_FOR_PID}=${encodeURIComponent(PID)}`
       : `${FORM_BASE}?embedded=true`;
@@ -41,7 +41,7 @@
     const continueBtn = document.getElementById("continueBtn");
     const formStatus = document.getElementById("formStatus");
 
-    // Detect when form is submitted
+    // Detect when the form has been submitted
     let lastUrl = "";
     const checkInterval = setInterval(() => {
       try {
@@ -51,11 +51,13 @@
           if (currentUrl.includes("formResponse")) {
             clearInterval(checkInterval);
             continueBtn.disabled = false;
+            continueBtn.classList.remove("disabled");
+            continueBtn.classList.add("primary");
             formStatus.textContent = "Survey submitted! You may now continue.";
           }
         }
       } catch (err) {
-        // Cross-origin error until Google form changes to /formResponse
+        // Ignore cross-origin errors until form changes to formResponse
       }
     }, 1000);
 
