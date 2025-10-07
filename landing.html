@@ -13,11 +13,12 @@
       Please complete the brief survey below. When finished, click “Continue to Part 2” to complete the browsing task.
     </p>
 
-    <!-- Embedded Google Form (prefilled with PROLIFIC_PID when present) -->
+    <!-- Embedded Google Form -->
     <iframe id="surveyFrame" class="form-frame" loading="lazy" title="Survey"></iframe>
 
     <div style="text-align:center; margin-top:20px;">
-      <button id="continueBtn" class="btn primary">Continue to Part 2</button>
+      <button id="continueBtn" class="btn primary" disabled>Continue to Part 2</button>
+      <p id="formStatus" class="muted small" style="margin-top:8px;">Please complete the survey first.</p>
     </div>
   </div>
 
@@ -28,16 +29,39 @@
     const STUDY_ID = qs.get("STUDY_ID") || "";
     const SESSION_ID = qs.get("SESSION_ID") || "";
 
-    // Prefill your Google Form (embedded) with PID only if present
+    // Prefill your Google Form (embedded)
     const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSfZSotW8pdpndlmkS53GGLxMPHwUCod10xghOydO30xXmwHHA/viewform";
     const ENTRY_ID_FOR_PID = "entry.66279277"; // your PID field
     const formUrl = PID
       ? `${FORM_BASE}?embedded=true&usp=pp_url&${ENTRY_ID_FOR_PID}=${encodeURIComponent(PID)}`
       : `${FORM_BASE}?embedded=true`;
-    document.getElementById("surveyFrame").src = formUrl;
+    const frame = document.getElementById("surveyFrame");
+    frame.src = formUrl;
 
-    // Continue to Part 2 (task.html), passing through known params
-    document.getElementById("continueBtn").addEventListener("click", () => {
+    const continueBtn = document.getElementById("continueBtn");
+    const formStatus = document.getElementById("formStatus");
+
+    // Detect when form is submitted
+    let lastUrl = "";
+    const checkInterval = setInterval(() => {
+      try {
+        const currentUrl = frame.contentWindow.location.href;
+        if (currentUrl !== lastUrl) {
+          lastUrl = currentUrl;
+          if (currentUrl.includes("formResponse")) {
+            clearInterval(checkInterval);
+            continueBtn.disabled = false;
+            formStatus.textContent = "Survey submitted! You may now continue.";
+          }
+        }
+      } catch (err) {
+        // Cross-origin error until Google form changes to /formResponse
+      }
+    }, 1000);
+
+    // Continue to Part 2 (task.html)
+    continueBtn.addEventListener("click", () => {
+      if (continueBtn.disabled) return;
       const url = new URL("task.html", location.href);
       if (PID) url.searchParams.set("PROLIFIC_PID", PID);
       if (STUDY_ID) url.searchParams.set("STUDY_ID", STUDY_ID);
