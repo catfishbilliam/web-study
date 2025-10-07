@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Information Evaluation Study — Survey</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>Information Evaluation Study</h1>
+    <p class="muted" id="pidLine">Loading…</p>
+
+    <div class="card">
+      <h2>Part 1: Short Survey</h2>
+      <p class="muted">Please complete the survey below. When finished, click “Continue to Part 2”.</p>
+
+      <!-- Embedded Google Form (prefilled with PID) -->
+      <iframe id="surveyFrame" title="Survey" class="form-frame"></iframe>
+
+      <div class="row actions">
+        <button id="toPart2" class="btn primary">Continue to Part 2</button>
+        <button id="openSurvey" class="btn">Open survey in a new tab</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- CONFIG ----
+    const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSfZSotW8pdpndlmkS53GGLxMPHwUCod10xghOydO30xXmwHHA/viewform?usp=pp_url&entry.66279277=TEST";
+    const ENTRY_ID_FOR_PID = "entry.66279277"; // your prefill key
+  
+    // Read Prolific params
+    const qs = new URLSearchParams(location.search);
+    const pidParam   = qs.get("PROLIFIC_PID");           // <-- no DEV fallback here
+    const STUDY_ID   = qs.get("STUDY_ID")   || "";
+    const SESSION_ID = qs.get("SESSION_ID") || "";
+  
+    // Build the form URL: prefill only when PID is present
+    const formUrl = pidParam
+      ? `${FORM_BASE}?usp=pp_url&${ENTRY_ID_FOR_PID}=${encodeURIComponent(pidParam)}`
+      : FORM_BASE;
+  
+    // Load iframe + “open in new tab” link
+    document.getElementById("surveyFrame").src = formUrl;
+    document.getElementById("openSurvey").onclick = () => window.open(formUrl, "_blank");
+  
+    // Show PID (or prompt)
+    const pidLine = document.getElementById("pidLine");
+    pidLine.textContent = pidParam
+      ? `Prolific ID detected: ${pidParam}`
+      : "No Prolific ID detected (testing mode). The survey field will be blank.";
+  
+    // Continue to Part 2 — pass the PID along only if we have one
+    document.getElementById("toPart2").onclick = () => {
+      const url = new URL("index.html", location.href);
+      if (pidParam) url.searchParams.set("PROLIFIC_PID", pidParam);
+      if (STUDY_ID) url.searchParams.set("STUDY_ID", STUDY_ID);
+      if (SESSION_ID) url.searchParams.set("SESSION_ID", SESSION_ID);
+      location.href = url.toString();
+    };
+  </script>
+</body>
+</html>
