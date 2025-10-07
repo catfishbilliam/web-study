@@ -28,47 +28,65 @@
     const PID = qs.get("PROLIFIC_PID") || "";
     const STUDY_ID = qs.get("STUDY_ID") || "";
     const SESSION_ID = qs.get("SESSION_ID") || "";
-
+  
     // Prefilled Google Form embed
     const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSfZSotW8pdpndlmkS53GGLxMPHwUCod10xghOydO30xXmwHHA/viewform";
     const ENTRY_ID_FOR_PID = "entry.66279277"; // Prolific ID field
     const formUrl = PID
       ? `${FORM_BASE}?embedded=true&usp=pp_url&${ENTRY_ID_FOR_PID}=${encodeURIComponent(PID)}`
       : `${FORM_BASE}?embedded=true`;
+  
     const frame = document.getElementById("surveyFrame");
-    frame.src = formUrl;
-
     const continueBtn = document.getElementById("continueBtn");
     const formStatus = document.getElementById("formStatus");
-
-    // Detect when the form has been submitted
-    let lastUrl = "";
-    const checkInterval = setInterval(() => {
-      try {
-        const currentUrl = frame.contentWindow.location.href;
-        if (currentUrl !== lastUrl) {
-          lastUrl = currentUrl;
-          if (currentUrl.includes("formResponse")) {
-            clearInterval(checkInterval);
-            continueBtn.disabled = false;
-            continueBtn.classList.remove("disabled");
-            continueBtn.classList.add("primary");
-            formStatus.textContent = "Survey submitted! You may now continue.";
-          }
-        }
-      } catch (err) {
-        // Ignore cross-origin errors until form changes to formResponse
-      }
-    }, 1000);
-
-    // Continue to Part 2 (task.html)
-    continueBtn.addEventListener("click", () => {
-      if (continueBtn.disabled) return;
+  
+    frame.src = formUrl;
+  
+    // Build destination URL for Part 2
+    function buildTaskUrl() {
       const url = new URL("task.html", location.href);
       if (PID) url.searchParams.set("PROLIFIC_PID", PID);
       if (STUDY_ID) url.searchParams.set("STUDY_ID", STUDY_ID);
       if (SESSION_ID) url.searchParams.set("SESSION_ID", SESSION_ID);
-      location.href = url.toString();
+      return url.toString();
+    }
+  
+    // Fallback: manual continue
+    continueBtn.addEventListener("click", () => {
+      if (continueBtn.disabled) return;
+      location.href = buildTaskUrl();
+    });
+  
+    // ---- Submission detection via iframe load count ----
+    // 1st load = form displayed
+    // 2nd load = confirmation page after submit
+    let loadCount = 0;
+    frame.addEventListener("load", () => {
+      loadCount += 1;
+  
+      if (loadCount === 1) {
+        // Form is shown
+        formStatus.textContent = "Please complete the survey first.";
+        return;
+      }
+  
+      // We assume the second load is the post-submit page
+      // Unlock the button and auto-redirect after a short delay
+      continueBtn.disabled = false;
+      continueBtn.classList.remove("disabled");
+      continueBtn.classList.add("primary");
+  
+      let secs = 3;
+      formStatus.textContent = `Survey submitted! Continuing to Part 2 in ${secs}…`;
+      const interval = setInterval(() => {
+        secs -= 1;
+        if (secs <= 0) {
+          clearInterval(interval);
+          location.href = buildTaskUrl();
+        } else {
+          formStatus.textContent = `Survey submitted! Continuing to Part 2 in ${secs}…`;
+        }
+      }, 1000);
     });
   </script>
 </body>
