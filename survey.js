@@ -37,6 +37,19 @@ const BG = [
   { type:"radio", name:"political_orientation", label:"In general, how would you describe your political orientation?", required:true,
     options:["Very liberal","Somewhat liberal","Moderate","Somewhat conservative","Very conservative","Prefer not to say"]
   },
+  { type:"radio", name:"vote_2024", label:"Who did you vote for in the 2024 U.S. Presidential Election?", required:false,
+    options:[
+      "Joe Biden (Democratic Party)",
+      "Donald Trump (Republican Party)",
+      "Robert F. Kennedy Jr. (Independent)",
+      "Cornel West (Independent)",
+      "Jill Stein (Green Party)",
+      "Did not vote / not eligible",
+      "Prefer not to say",
+      "Other"
+    ],
+    otherName:"vote_2024_other"
+  },
   { type:"radio", name:"eval_confidence", label:"How confident are you in evaluating whether information is true or false?", required:true,
     options:["Not at all confident","Slightly confident","Moderately confident","Very confident","Extremely confident"]
   }
