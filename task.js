@@ -1,5 +1,5 @@
 // ====== CONFIG ======
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbyFF64b8m-06gFnDltUGf5wd_1PKIrXQUnAhcjKYBnb2WeEeoNme0MCLnWmPkAGm-ZsTg/exec"; 
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbzOZ08y8CpH1AvgvURXIP5sHFmkauS4-GNcCXE9fAmFnvdDRaEmmXLc7kRnlHHy79gDkA/exec"; 
 const PROLIFIC_CODE = "CIXRDKFP";
 const DEV_SHOW_REDIRECT = false; 
 
@@ -300,26 +300,42 @@ submitBtn.addEventListener("click", async () => {
   state.shareIntent = shareSel.value || "";
 
   const post = POSTS[currentIndex];
+  const dwellMs = performance.now() - (state.startTime || performance.now());
 
   const payload = {
-    token: state.token,
+    participantId: TOKEN,
+    trialIndex: currentIndex,
+    confidence: state.confidence,
     action: state.action,
     accuracy: state.accuracy,
     shareIntent: state.shareIntent,
-    confidence: state.confidence,
+    dwellMs,
+    post: {
+      id: post.id,
+      platform: post.platform,
+      condition: post.condition,
+      headline: post.headline,
+      permalink: post.permalink || "",
+      src: post.src || "",
+      url: post.permalink || post.src || ""
+    },
     meta: {
       phase: "task",
       userAgent: navigator.userAgent,
       submittedAt: Date.now(),
-      postIndex: currentIndex,
-      postId: post.id,
-      platform: post.platform,
-      postUrl: post.permalink || post.src,
-      uuid: (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now())
+      trialIndex: currentIndex,
+      post: {
+        id: post.id,
+        platform: post.platform,
+        condition: post.condition,
+        headline: post.headline,
+        url: post.permalink || post.src || ""
+      }
     }
   };
 
   const body = new URLSearchParams({ payload: JSON.stringify(payload) }).toString();
+
   try {
     await fetch(ENDPOINT, {
       method: "POST",
@@ -327,12 +343,13 @@ submitBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body
     });
-    console.log("[task] POST sent", payload.meta.uuid);
+    console.log("[task] POST sent", payload.post.id);
   } catch (err) {
     console.error("[task] POST failed", err);
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
+  state.startTime = performance.now();
 
   if (currentIndex < POSTS.length - 1) {
     currentIndex += 1;
@@ -341,9 +358,7 @@ submitBtn.addEventListener("click", async () => {
     document.querySelector("main.wizard-card")?.classList.add("hidden");
     document.getElementById("ratingsCard")?.classList.add("hidden");
     document.getElementById("thanks")?.classList.remove("hidden");
-
     window.scrollTo({ top: 0, behavior: "smooth" });
-
     const codeEl = document.getElementById("code");
     if (codeEl) codeEl.textContent = PROLIFIC_CODE;
   }

@@ -1,7 +1,7 @@
 /* ======================
    CONFIG
 ====================== */
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbyFF64b8m-06gFnDltUGf5wd_1PKIrXQUnAhcjKYBnb2WeEeoNme0MCLnWmPkAGm-ZsTg/exec"; 
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbzOZ08y8CpH1AvgvURXIP5sHFmkauS4-GNcCXE9fAmFnvdDRaEmmXLc7kRnlHHy79gDkA/exec"; 
 const NEXT_URL = "task.html"; 
 const TOKEN = (() => {
   const qs = new URLSearchParams(location.search);
