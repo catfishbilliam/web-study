@@ -3,98 +3,55 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Information Evaluation Study — Survey</title>
+  <title>Personality and Information Evaluation Study — Survey</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
-    <h1>Part 1: Survey</h1>
-    <p class="muted">
-      Please complete the brief survey below. Once submitted, the button to continue will unlock automatically.
-    </p>
 
-    <!-- Embedded Google Form -->
-    <iframe id="surveyFrame" class="form-frame" loading="lazy" title="Survey"></iframe>
+    <header class="card header-card">
+      <div class="top-row">
+        <h1>Personality and Information Evaluation Study</h1>
+        <span id="tokenBadge" class="pill"></span>
+      </div>
 
-    <div style="text-align:center; margin-top:20px;">
-      <button id="continueBtn" class="btn disabled" disabled>Continue to Part 2</button>
-      <p id="formStatus" class="muted small" style="margin-top:8px;">Please complete the survey first.</p>
+      <p class="muted" style="margin-top:10px;">
+        This brief survey asks about how people evaluate information from different sources and topics.
+        You'll answer a few questions about yourself and your opinions, followed by a short set of news-style items.
+        This survey takes about 10–12 minutes.
+      </p>
+      <p class="muted" style="margin-top:8px;">
+        Please answer honestly — there are no right or wrong answers. Your responses are anonymous and will be used for research purposes only.
+      </p>
+
+      <div class="progress-wrap">
+        <div id="progressBar" class="progress-bar"><span></span></div>
+        <div id="progressText" class="progress-text small muted">0% complete</div>
+      </div>
+    </header>
+
+    <!-- Survey card (JS injects each section/question) -->
+    <main id="card" class="card wizard-card" aria-live="polite">
+      <!-- JS injects content here -->
+    </main>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="backBtn" class="btn" type="button">Back</button>
+      <button id="nextBtn" class="btn primary" type="button">Next</button>
     </div>
+
+    <footer class="card foot-card">
+      <div class="small muted">
+        Your responses are anonymous. By continuing, you confirm you are 18+ and consent to participate.
+      </div>
+    </footer>
+
   </div>
 
-  <script>
-    // Read Prolific params
-    const qs = new URLSearchParams(location.search);
-    const PID = qs.get("PROLIFIC_PID") || "";
-    const STUDY_ID = qs.get("STUDY_ID") || "";
-    const SESSION_ID = qs.get("SESSION_ID") || "";
-  
-    // Prefill your Google Form (embedded)
-    const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSfZSotW8pdpndlmkS53GGLxMPHwUCod10xghOydO30xXmwHHA/viewform";
-    const ENTRY_ID_FOR_PID = "entry.66279277"; // your PID field
-    const formUrl = PID
-      ? `${FORM_BASE}?embedded=true&usp=pp_url&${ENTRY_ID_FOR_PID}=${encodeURIComponent(PID)}`
-      : `${FORM_BASE}?embedded=true`;
-    const frame = document.getElementById("surveyFrame");
-    frame.src = formUrl;
-  
-    const continueBtn = document.getElementById("continueBtn");
-    const formStatus = document.getElementById("formStatus");
-  
-    // ---- Server-side check: has this PID submitted the survey? ----
-    const CHECK_ENDPOINT = "https://script.google.com/macros/s/AKfycbwJaswrvUTZMN_XseRLBT_4RvwlW8WzX9-6P3J00haf4n95UXOPHYIxcvDYKnQLJFsXPA/exec";
-  
-    async function checkSubmitted() {
-      if (!PID) return false; // if no PID, we can't prove it
-      try {
-        const url = `${CHECK_ENDPOINT}?fn=checkSurvey&pid=${encodeURIComponent(PID)}`;
-        const res = await fetch(url, { method: "GET", cache: "no-store" });
-        const data = await res.json();
-        return !!(data && data.ok && data.submitted === true);
-      } catch (e) {
-        return false;
-      }
-    }
-  
-    function buildTaskUrl() {
-      const url = new URL("task.html", location.href);
-      if (PID) url.searchParams.set("PROLIFIC_PID", PID);
-      if (STUDY_ID) url.searchParams.set("STUDY_ID", STUDY_ID);
-      if (SESSION_ID) url.searchParams.set("SESSION_ID", SESSION_ID);
-      return url.toString();
-    }
-  
-    // Poll every 5s until the server sees a row with this PID
-    let pollTimer = null;
-    async function startPolling() {
-      formStatus.textContent = "Please complete the survey first.";
-      continueBtn.disabled = true;
-      continueBtn.classList.add("disabled");
-      continueBtn.classList.remove("primary");
-  
-      const tryOnce = async () => {
-        const ok = await checkSubmitted();
-        if (ok) {
-          clearInterval(pollTimer);
-          formStatus.textContent = "Survey submitted! You may now continue.";
-          continueBtn.disabled = false;
-          continueBtn.classList.remove("disabled");
-          continueBtn.classList.add("primary");
-        }
-      };
-  
-      await tryOnce(); // quick first check
-      pollTimer = setInterval(tryOnce, 5000);
-    }
-  
-    // Manual continue (only works after unlock)
-    continueBtn.addEventListener("click", () => {
-      if (continueBtn.disabled) return;
-      location.href = buildTaskUrl();
-    });
-  
-    // Start polling when the page is ready
-    startPolling();
-  </script>
+  <script src="survey.js"></script>
 </body>
 </html>
