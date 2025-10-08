@@ -1,18 +1,21 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=landing.html">
-  <meta name="robots" content="noindex">
   <meta charset="utf-8" />
+  <meta name="robots" content="noindex">
   <title>Redirecting…</title>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
-<script>
-    // Redirect or show message for mobile and tablets
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+  <script>
     document.addEventListener("DOMContentLoaded", () => {
       const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
       if (isMobile) {
+        // Show “Desktop Required” message
         document.body.innerHTML = `
           <div style="
             display:flex;
@@ -22,7 +25,7 @@
             height:100vh;
             background:#0A1A22;
             color:#fff;
-            font-family:sans-serif;
+            font-family:'Sansation', sans-serif;
             text-align:center;
             padding:2rem;
           ">
@@ -33,10 +36,14 @@
             </p>
           </div>
         `;
+      } else {
+        // Desktop — redirect to main site
+        window.location.href = "landing.html";
       }
     });
   </script>
 </head>
+
 <body>
   <p>If you are not redirected automatically, <a href="landing.html">click here</a>.</p>
 </body>
