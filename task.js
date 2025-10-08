@@ -1,7 +1,7 @@
 // ====== CONFIG ======
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbzOZ08y8CpH1AvgvURXIP5sHFmkauS4-GNcCXE9fAmFnvdDRaEmmXLc7kRnlHHy79gDkA/exec"; 
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyI-OeUgLbyZjc51xcl3A23VcQnd61NjZmpOSTXrtbvsQ_9AW3S7lO5t-o-4iuWkyOzIg/exec";
 const PROLIFIC_CODE = "CIXRDKFP";
-const DEV_SHOW_REDIRECT = false; 
+const DEV_SHOW_REDIRECT = false;
 
 // ====== TOKEN (URL or session) ======
 const qs = new URLSearchParams(location.search);
@@ -13,22 +13,33 @@ sessionStorage.setItem("link_token", TOKEN);
 const tokenBadgeEl = document.getElementById("tokenBadge");
 if (tokenBadgeEl) tokenBadgeEl.textContent = `Link code: ${TOKEN}`;
 
+// ====== Utils ======
 function shuffle(array) {
   let currentIndex = array.length, randomIndex;
-
   while (currentIndex !== 0) {
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex--;
-
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]
-    ];
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
   }
-
   return array;
 }
 
-const POSTS = [
+// ---- Persisted order & progress ----
+const STORAGE_KEY = `task_progress_${TOKEN}`;
+
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }
+  catch { return null; }
+}
+function saveProgress(patch = {}) {
+  const prev = loadProgress() || {};
+  const next = { ...prev, ...patch };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+
+// Base list (your POSTS content moves here unchanged)
+const BASE_POSTS = [
   // ---- False Conspiratorial ----
   {
     id: "fb-1",
@@ -94,11 +105,22 @@ const POSTS = [
   }
 ];
 
-shuffle(POSTS);
+// Build the session's order once, then reuse it
+const saved = loadProgress();
+let POSTS;
+if (saved?.orderIds?.length) {
+  POSTS = saved.orderIds
+    .map(id => BASE_POSTS.find(p => p.id === id))
+    .filter(Boolean);
+} else {
+  POSTS = shuffle([...BASE_POSTS]);
+  saveProgress({ orderIds: POSTS.map(p => p.id), currentIndex: 0 });
+}
 
-let currentIndex = 0;
+// Start from saved index if available
+let currentIndex = Math.max(0, Math.min(saved?.currentIndex ?? 0, POSTS.length - 1));
 
-// ====== Elements ======
+
 const embedWrap     = document.getElementById("embedWrap");
 const ratingsCard   = document.getElementById("ratingsCard");
 const accuracyEl    = document.getElementById("accuracy");
@@ -109,7 +131,6 @@ const progressText  = document.getElementById("progressText");
 const progressBar   = document.querySelector("#progressBar > span");
 const mainCard      = document.querySelector("main.wizard-card");
 const thanksCard    = document.getElementById("thanks");
-
 const actionBtns = document.querySelectorAll(".feed-actions .btn");
 
 const state = {
@@ -117,8 +138,42 @@ const state = {
   action: null,
   accuracy: 3,
   confidence: 3,
-  shareIntent: ""
+  shareIntent: "",
+  startTime: null
 };
+
+const TASK_STORAGE_KEY = `task_progress_${TOKEN}`;
+const TASK_VERSION = 1;
+
+function loadTaskProgress() {
+  try {
+    const raw = localStorage.getItem(TASK_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.v !== TASK_VERSION) return null;
+    return parsed;
+  } catch { return null; }
+}
+function saveTaskProgress() {
+  try {
+    const payload = {
+      v: TASK_VERSION,
+      when: Date.now(),
+      currentIndex,
+      state: {
+        action: state.action,
+        accuracy: state.accuracy,
+        confidence: state.confidence,
+        shareIntent: state.shareIntent,
+        startTime: state.startTime
+      }
+    };
+    localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(payload));
+  } catch {}
+}
+function clearTaskProgress() {
+  try { localStorage.removeItem(TASK_STORAGE_KEY); } catch {}
+}
 
 (function ensureIGScript() {
   if (!window.instgrm) {
@@ -128,6 +183,14 @@ const state = {
     document.head.appendChild(s);
   }
 })();
+
+const taskSaved = loadTaskProgress();
+if (taskSaved && typeof taskSaved.currentIndex === "number") {
+  currentIndex = Math.min(Math.max(taskSaved.currentIndex, 0), POSTS.length - 1);
+  if (taskSaved.state && typeof taskSaved.state === "object") {
+    Object.assign(state, taskSaved.state);
+  }
+}
 
 function mountSpinner(container) {
   if (!container) return;
@@ -156,20 +219,35 @@ function unmountSpinner(container) {
 
 function renderPost(index) {
   const total = POSTS.length;
-  const n = Math.min(Math.max(index + 1, 1), total);   
+  const n = Math.min(Math.max(index + 1, 1), total);
   if (progressText) progressText.textContent = `Post ${n} of ${total}`;
   if (progressBar)  progressBar.style.width = `${Math.round((n / total) * 100)}%`;
 
-  state.action = null;
-  state.accuracy = 3;
-  state.confidence = 3;
-  state.shareIntent = "";
+  saveProgress({ currentIndex: index });
 
   actionBtns.forEach(b => { b.disabled = false; b.classList.remove("primary"); });
   ratingsCard.classList.add("hidden");
   accuracyEl.value = "3";
   confidenceEl.value = "3";
   shareSel.value = "";
+
+  if (state.action) {
+    actionBtns.forEach(b => {
+      b.disabled = true;
+      b.classList.toggle("primary", b.dataset.action === state.action);
+    });
+    ratingsCard.classList.remove("hidden");
+    accuracyEl.value   = String(state.accuracy ?? 3);
+    confidenceEl.value = String(state.confidence ?? 3);
+    shareSel.value     = String(state.shareIntent ?? "");
+  }
+
+  state.action      = state.action && POSTS[index] ? state.action : null;
+  state.accuracy    = Number.isFinite(state.accuracy) ? state.accuracy : 3;
+  state.confidence  = Number.isFinite(state.confidence) ? state.confidence : 3;
+  state.shareIntent = state.shareIntent || "";
+
+  state.startTime = performance.now();
 
   embedWrap.innerHTML = `
     <div class="spinner-overlay" aria-live="polite" aria-label="Loading post…">
@@ -179,12 +257,13 @@ function renderPost(index) {
   `;
   mountSpinner(embedWrap);
 
+  saveTaskProgress();
+
   const post = POSTS[index];
   let settled = false;
   const settle = () => { if (settled) return; settled = true; unmountSpinner(embedWrap); };
 
   if (post.platform === "facebook") {
-    // Build a src with an appropriate width so FB lays out text correctly
     const fbSrcWithWidth = (src, w) => {
       try {
         const u = new URL(src);
@@ -196,17 +275,14 @@ function renderPost(index) {
         return src;
       }
     };
-  
-    // Compute a good width for the embed (FB supports roughly 350–750px)
     const wrapW = Math.max(350, Math.min(750, Math.floor(embedWrap.clientWidth || 700)));
-  
     const iframe = document.createElement("iframe");
     iframe.className = "fb-post-embed";
     iframe.src = fbSrcWithWidth(post.src, wrapW);
     iframe.setAttribute("width", "100%");
     iframe.style.width = "100%";
     iframe.style.maxWidth = "750px";
-    iframe.setAttribute("height", String(Math.round(wrapW * 1.1))); // reasonable starting height
+    iframe.setAttribute("height", String(Math.round(wrapW * 1.1)));
     iframe.style.border = "none";
     iframe.style.overflow = "hidden";
     iframe.scrolling = "no";
@@ -214,10 +290,8 @@ function renderPost(index) {
     iframe.frameBorder = "0";
     iframe.allow = "autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share";
     embedWrap.appendChild(iframe);
-  
     iframe.addEventListener("load", settle, { once: true });
     setTimeout(settle, 12000);
-  
   } else if (post.platform === "instagram") {
     const block = document.createElement("blockquote");
     block.className = "instagram-media ig-embed";
@@ -229,9 +303,7 @@ function renderPost(index) {
       margin:"0 auto", maxWidth:"540px", minWidth:"300px", padding:"0", width:"100%"
     });
     embedWrap.appendChild(block);
-  
     if (window.instgrm?.Embeds?.process) window.instgrm.Embeds.process();
-  
     const obs = new MutationObserver(() => {
       const igFrame = embedWrap.querySelector("iframe");
       if (igFrame) {
@@ -240,9 +312,7 @@ function renderPost(index) {
       }
     });
     obs.observe(embedWrap, { childList: true, subtree: true });
-  
     setTimeout(settle, 12000);
-  
   } else if (post.platform === "twitter") {
     const extractId = (u) => {
       const m = String(u || "").match(/status\/(\d+)/);
@@ -257,35 +327,39 @@ function renderPost(index) {
         .catch(() => settle());
       return true;
     };
-  
     if (!tryCreate() && window.twttr?.ready) {
       window.twttr.ready(() => { tryCreate(); });
     }
-  
     setTimeout(settle, 12000);
   }
 }
 
 actionBtns.forEach(btn => {
   btn.addEventListener("click", () => {
-    state.action = btn.dataset.action; 
+    state.action = btn.dataset.action;
     actionBtns.forEach(b => { b.disabled = true; b.classList.remove("primary"); });
     btn.classList.add("primary");
-
     if (ratingsCard.classList.contains("hidden")) {
       ratingsCard.classList.remove("hidden");
       ratingsCard.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    saveTaskProgress();
   });
 });
 
 accuracyEl.addEventListener("input", () => {
   const v = Number(accuracyEl.value);
   state.accuracy = Number.isFinite(v) ? v : 3;
+  saveTaskProgress();
 });
 confidenceEl.addEventListener("input", () => {
   const v = Number(confidenceEl.value);
   state.confidence = Number.isFinite(v) ? v : 3;
+  saveTaskProgress();
+});
+shareSel.addEventListener("input", () => {
+  state.shareIntent = shareSel.value || "";
+  saveTaskProgress();
 });
 
 submitBtn.addEventListener("click", async () => {
@@ -343,18 +417,18 @@ submitBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body
     });
-    console.log("[task] POST sent", payload.post.id);
-  } catch (err) {
-    console.error("[task] POST failed", err);
-  }
+  } catch {}
 
+  saveTaskProgress();
   window.scrollTo({ top: 0, behavior: "smooth" });
   state.startTime = performance.now();
 
   if (currentIndex < POSTS.length - 1) {
     currentIndex += 1;
+    saveTaskProgress();
     renderPost(currentIndex);
   } else {
+    clearTaskProgress();
     document.querySelector("main.wizard-card")?.classList.add("hidden");
     document.getElementById("ratingsCard")?.classList.add("hidden");
     document.getElementById("thanks")?.classList.remove("hidden");
@@ -369,3 +443,10 @@ if (document.readyState === "loading") {
 } else {
   renderPost(currentIndex);
 }
+
+window.addEventListener('resize', () => {
+  const post = POSTS[currentIndex];
+  if (post?.platform === 'facebook') renderPost(currentIndex);
+});
+
+window.addEventListener("beforeunload", saveTaskProgress);

@@ -1,26 +1,32 @@
-/* ======================
-   CONFIG
-====================== */
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbzOZ08y8CpH1AvgvURXIP5sHFmkauS4-GNcCXE9fAmFnvdDRaEmmXLc7kRnlHHy79gDkA/exec"; 
-const NEXT_URL = "task.html"; 
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyI-OeUgLbyZjc51xcl3A23VcQnd61NjZmpOSTXrtbvsQ_9AW3S7lO5t-o-4iuWkyOzIg/exec";
+const NEXT_URL = "task.html";
 const TOKEN = (() => {
   const qs = new URLSearchParams(location.search);
   const t = qs.get("token") || sessionStorage.getItem("link_token") || Math.random().toString(36).slice(2,10).toUpperCase();
   sessionStorage.setItem("link_token", t);
   return t;
 })();
-
 document.getElementById("tokenBadge").textContent = `Link code: ${TOKEN}`;
 
-/* ======================
-   ITEMS (background + HSNS + ETMC + GCB)
-====================== */
+const STORAGE_KEY = `survey_progress_${TOKEN}`;
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch { return null; }
+}
+function saveProgress(patch = {}) {
+  const prev = loadProgress() || {};
+  const next = { ...prev, ...patch };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+function clearProgress() { localStorage.removeItem(STORAGE_KEY); }
+
 const BG = [
   {
     type:"intro",
     title:"General Background",
     desc:"In this section, you’ll answer a few general background questions. These help us understand how responses might vary among different people."
   },
+  { type:"text", name:"prolific_id", label:"Please enter your Prolific ID:", required:true, placeholder:"e.g., 5f1234567890abcd12345678" },
   { type:"number", name:"age", label:"What is your age?", required:true, min:18, max:100 },
   { type:"radio", name:"gender", label:"What is your gender?", required:true,
     options:["Male","Female","Trans male","Trans female","Non-binary","Prefer not to say","Other"], otherName:"gender_other"
@@ -55,7 +61,6 @@ const BG = [
   }
 ];
 
-// HSNS
 const HSNS_DESC = {
   title: "General Attitudes and Self-Perception",
   desc: "Please rate how characteristic each statement is of you. 1 = Very uncharacteristic/strongly disagree … 5 = Very characteristic/strongly agree."
@@ -73,36 +78,11 @@ const HSNS_ITEMS = [
   "I am secretly upset or annoyed when other people come to me with their troubles, asking me for my time and sympathy."
 ];
 
-// ETMC
-const ETMC_DESC = {
-  title:"Views on Communication and Information",
-  desc:"People vary in how much they trust or question information from various sources. Please indicate your agreement with each statement. 1 = Strongly disagree … 7 = Strongly agree."
-};
-const ETMC_ITEMS = [
-  "I usually ask people for advice when I have a personal problem.",
-  "I find information easier to trust and absorb when it comes from someone who knows me well.",
-  "I’d prefer to find things out for myself on the internet rather than asking people for information.",
-  "I often feel that people do not understand what I want and need.",
-  "I am often considered naïve because I believe almost anything that people tell me.",
-  "When I speak to different people, I find myself easily persuaded by what they say even if this is different from what I believed before.",
-  "Sometimes, having a conversation with people who have known me for a long time helps me develop new perspectives about myself.",
-  "I find it very useful to learn from what people tell me about their experiences.",
-  "If you put too much faith in what people tell you, you are likely to get hurt.",
-  "When someone tells me something, my immediate reaction is to wonder why they are telling me this.",
-  "I have too often taken advice from the wrong people.",
-  "People have told me that I am too easily influenced by others.",
-  "If I don’t know what to do, my first instinct is to ask someone whose opinion I value.",
-  "I don’t usually act on advice that I get from others even when I think it’s probably sound.",
-  "In the past, I have misjudged who to believe and been taken advantage of."
-];
-
-// GCB
 const GCB_DESC = {
   title: "General Opinions About Information and Events",
   desc: "Please read the following statements and answer about whether or not you think they are true. Use the scale where 1 = Definitely false and 5 = Definitely true."
 };
 
-// ====== Base arrays ======
 const ORIGINAL_GCB = [
   "The government is involved in the murder of innocent citizens and/or well-known public figures and keeps this a secret.",
   "The power held by heads of state is second to that of small unknown groups who really control world politics.",
@@ -144,34 +124,32 @@ function shuffle(array) {
   return array;
 }
 
-const GCB_ITEMS = shuffle([...ORIGINAL_GCB, ...PROFESSOR_ITEMS]);
+const savedInit = loadProgress();
+let GCB_ITEMS = savedInit?.gcb_items && Array.isArray(savedInit.gcb_items) && savedInit.gcb_items.length === (ORIGINAL_GCB.length + PROFESSOR_ITEMS.length)
+  ? savedInit.gcb_items
+  : shuffle([...ORIGINAL_GCB, ...PROFESSOR_ITEMS]);
+if (!savedInit?.gcb_items) saveProgress({ gcb_items: GCB_ITEMS });
 
 console.log(GCB_ITEMS);
 
-/* ======================
-   Wizard model: sections → items
-====================== */
 const sections = [
   { key:"bg",   type:"background", intro:{ title: BG[0].title, desc: BG[0].desc }, items: BG.slice(1) },
   { key:"hsns", type:"likert",     intro: HSNS_DESC, items: HSNS_ITEMS.map((t,i)=>({text:t, name:`HSNS_${i+1}`, min:1,max:5})) },
-  { key:"etmc", type:"likert",     intro: ETMC_DESC, items: ETMC_ITEMS.map((t,i)=>({text:t, name:`ETMC_${i+1}`, min:1,max:7})) },
   { key:"gcb",  type:"likert",     intro: GCB_DESC,  items: GCB_ITEMS.map((t,i)=>({text:t, name:`GCB_${i+1}`, min:1,max:5})) }
 ];
 
-/* ======================
-   State
-====================== */
-let sIndex = 0;      // current section index
-let qIndex = -1;     // -1 = show section intro
-const answers = { background:{}, hsns:[], gcb:[], etmc:[], specific_claims:[] };
+let sIndex = 0;
+let qIndex = -1;
+const answers = savedInit?.answers || { background:{}, hsns:[], gcb:[], specific_claims:[] };
+if (savedInit) {
+  sIndex = typeof savedInit.sIndex === "number" ? savedInit.sIndex : 0;
+  qIndex = typeof savedInit.qIndex === "number" ? savedInit.qIndex : -1;
+}
 
 const card = document.getElementById("card");
 const backBtn = document.getElementById("backBtn");
 const nextBtn = document.getElementById("nextBtn");
 
-/* ======================
-   Helpers
-====================== */
 function scaleLegend(secKey) {
   if (secKey === "hsns") {
     const labels = [
@@ -183,18 +161,7 @@ function scaleLegend(secKey) {
     ];
     return legendList(labels);
   }
-  if (secKey === "etmc") {
-    const labels = [
-      "Strongly disagree",
-      "Disagree",
-      "Somewhat disagree",
-      "Neither agree nor disagree",
-      "Somewhat agree",
-      "Agree",
-      "Strongly agree"
-    ];
-    return legendList(labels);
-  }
+
   if (secKey === "gcb") {
     const labels = [
       "Definitely not true",
@@ -224,11 +191,8 @@ function scrollTopSmooth() {
   } catch(_) { window.scrollTo(0,0); }
 }
 
-/* ======================
-   Rendering
-====================== */
 function render() {
-  const totalSteps = sections.reduce((sum,sec)=>sum + 1 + sec.items.length, 0); // intro + items
+  const totalSteps = sections.reduce((sum,sec)=>sum + 1 + sec.items.length, 0);
   const currentStep = sections.slice(0,sIndex).reduce((sum,sec)=>sum + 1 + sec.items.length, 0) + (qIndex+1);
   const pct = Math.max(0, Math.min(100, Math.round((currentStep / totalSteps)*100)));
   document.querySelector("#progressBar span").style.width = pct + "%";
@@ -247,6 +211,7 @@ function render() {
     nextBtn.textContent = "Start section";
     nextBtn.disabled = false;
     scrollTopSmooth();
+    saveProgress({ sIndex, qIndex, answers });
     return;
   }
 
@@ -260,6 +225,13 @@ function render() {
         <p class="q-text">${item.label}${item.required?" *":""}</p>
         <div class="group">
           <input id="${item.name}" type="number" min="${item.min}" max="${item.max}" placeholder="Enter a number" />
+        </div>
+      `;
+    } else if (item.type === "text") {
+      html += `
+        <p class="q-text">${item.label}${item.required?" *":""}</p>
+        <div class="group">
+          <input id="${item.name}" type="text" placeholder="${item.placeholder || ""}" />
         </div>
       `;
     } else if (item.type === "radio") {
@@ -309,7 +281,7 @@ function render() {
         r.addEventListener("change", () => { nextBtn.disabled = false; });
       });
     } else {
-      nextBtn.disabled = false; 
+      nextBtn.disabled = false;
     }
   } else {
     const item = sec.items[qIndex];
@@ -322,6 +294,7 @@ function render() {
   backBtn.disabled = sIndex === 0 && qIndex === -1;
   nextBtn.textContent = (sIndex === sections.length-1 && qIndex === sec.items.length-1) ? "Submit survey" : "Next";
   scrollTopSmooth();
+  saveProgress({ sIndex, qIndex, answers });
 }
 
 function restoreValue(sec, idx){
@@ -330,11 +303,14 @@ function restoreValue(sec, idx){
     if (item.type === "number" && answers.background[item.name] != null) {
       document.getElementById(item.name).value = answers.background[item.name];
     }
+    if (item.type === "text" && answers.background[item.name]) {
+      document.getElementById(item.name).value = answers.background[item.name];
+    }
     if (item.type === "radio" && answers.background[item.name]){
       const val = answers.background[item.name];
-      const el = [...document.querySelectorAll(`input[name="${item.name}"]`)].find(r=>r.value===val || val.startsWith("Other:"));
+      const el = [...document.querySelectorAll(`input[name="${item.name}"]`)].find(r=>r.value===val || (typeof val === "string" && val.startsWith("Other:")));
       if (el) { el.checked = true; }
-      if (val.startsWith("Other:") && item.otherName) {
+      if (typeof val === "string" && val.startsWith("Other:") && item.otherName) {
         const otherEl = document.getElementById(item.otherName);
         if (otherEl) otherEl.value = val.replace(/^Other:\s*/,"");
       }
@@ -352,7 +328,7 @@ function restoreValue(sec, idx){
 
 function readCurrentAnswer() {
   const sec = sections[sIndex];
-  if (qIndex < 0) return true; 
+  if (qIndex < 0) return true;
 
   if (sec.type === "background"){
     const item = sec.items[qIndex];
@@ -360,11 +336,18 @@ function readCurrentAnswer() {
       const v = Number(document.getElementById(item.name).value);
       if (item.required && (!v || v < item.min || v > item.max)) return false;
       answers.background[item.name] = v || null;
+      saveProgress({ answers });
+      return true;
+    } else if (item.type === "text"){
+      const v = (document.getElementById(item.name).value || "").trim();
+      if (item.required && !v) return false;
+      answers.background[item.name] = v;
+      saveProgress({ answers });
       return true;
     } else if (item.type === "radio"){
       const picked = document.querySelector(`input[name="${item.name}"]:checked`);
       if (item.required && !picked) return false;
-      if (!picked) { answers.background[item.name] = null; return true; }
+      if (!picked) { answers.background[item.name] = null; saveProgress({ answers }); return true; }
       if (picked.value === "Other" && item.otherName){
         const other = (document.getElementById(item.otherName)?.value || "").trim();
         if (!other) return false;
@@ -372,6 +355,7 @@ function readCurrentAnswer() {
       } else {
         answers.background[item.name] = picked.value;
       }
+      saveProgress({ answers });
       return true;
     }
   } else {
@@ -379,13 +363,11 @@ function readCurrentAnswer() {
     const picked = document.querySelector(`input[name="${item.name}"]:checked`);
     if (!picked) return false;
     answers[sec.key][qIndex] = Number(picked.value);
+    saveProgress({ answers });
     return true;
   }
 }
 
-/* ======================
-   Navigation
-====================== */
 function next() {
   if (!readCurrentAnswer()) {
     pulse(nextBtn);
@@ -402,6 +384,7 @@ function next() {
       return;
     }
   }
+  saveProgress({ sIndex, qIndex, answers });
   render();
 }
 
@@ -411,6 +394,7 @@ function back() {
   } else if (sIndex > 0) {
     sIndex--; qIndex = sections[sIndex].items.length - 1;
   }
+  saveProgress({ sIndex, qIndex, answers });
   render();
 }
 
@@ -419,9 +403,6 @@ function pulse(btn){
   setTimeout(()=>{ btn.disabled = false; }, 300);
 }
 
-/* ======================
-   Submit → Apps Script → redirect to task.html?token=X
-====================== */
 function mean(arr){ 
   const nums = arr.filter(v => typeof v === "number");
   return nums.length ? nums.reduce((a,b)=>a+b,0) / nums.length : null;
@@ -444,15 +425,12 @@ async function submitSurvey(){
       background: answers.background,
       hsns: answers.hsns,
       gcb:  answers.gcb,
-      etmc: answers.etmc,
       specific_claims: answers.specific_claims,
       scores: {
         hsns_mean: mean(answers.hsns),
         hsns_sum:  sum(answers.hsns),
         gcb_mean:  mean(answers.gcb),
         gcb_sum:   sum(answers.gcb),
-        etmc_mean: mean(answers.etmc),
-        etmc_sum:  sum(answers.etmc),
         claims_mean: mean(answers.specific_claims),
         claims_sum:  sum(answers.specific_claims)
       }
@@ -474,14 +452,13 @@ async function submitSurvey(){
     } catch (_) {}
   }
 
+  clearProgress();
+
   const url = new URL(NEXT_URL, location.href);
   url.searchParams.set("token", TOKEN);
   location.href = url.toString();
 }
 
-/* ======================
-   Wire up
-====================== */
 nextBtn.addEventListener("click", next);
 backBtn.addEventListener("click", back);
 document.addEventListener("keydown", (e)=>{
