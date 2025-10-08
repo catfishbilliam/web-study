@@ -28,20 +28,70 @@ function shuffle(array) {
   return array;
 }
 
-// ====== POSTS SEQUENCE (one at a time) ======
 const POSTS = [
-  { id: "ig-1", platform: "instagram", permalink: "https://www.instagram.com/reel/DPCI77UlWpA/?utm_source=ig_embed&utm_campaign=loading" },
-  { id: "fb-1", platform: "facebook",  src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fthepeoplesvoicetv%2Fposts%2Fpfbid0b537JYCwGfzNqYyPaBHF4sMbZHq657ALUefTAwjFvj9JM3ck4sHtB2BdyfoGmmZcl&show_text=true&width=500" },
-  { id: "ig-2", platform: "instagram", permalink: "https://www.instagram.com/p/DPVFqLCjAOS/?utm_source=ig_embed&utm_campaign=loading" },
-  { id: "tw-1", platform: "twitter",   tweetId: "1974091628240306230" },
-  { id: "ig-3", platform: "instagram", permalink: "https://www.instagram.com/p/BozSeF9FS6s/?utm_source=ig_embed&utm_campaign=loading" },
-  { id: "fb-2", platform: "facebook",  src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fcnninternational%2Fposts%2Fpfbid029aDqGzSYniqn7zFeUERb5aPBU92aHfvDDrpC3GjuahvZY4f5D8JtNNSVXcRDhkYtl&show_text=true&width=500" },
-  { id: "fb-3", platform: "facebook",  src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2FEmpireNewsNet%2Fposts%2Fpfbid02AStsTnzsiJjDpfvHd4XmdvexeNAijtFZYRDtRKpWmZP3ofb4M6yGQ1aD3icpwu5al&show_text=true&width=500" },
-  { id: "fb-4", platform: "facebook",  src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2FEmpireNewsNet%2Fposts%2Fpfbid02KycDGjMN2nqcMJHF26YMgFZTG8jTrtFNfmXJHaHums45Tj1j3fy1U3ofGuTdp1Dhl&show_text=true&width=500" },
-  { id: "tw-2", platform: "twitter",   tweetId: "1975274977206194409" },
-  { id: "ig-4", platform: "instagram", permalink: "https://www.instagram.com/p/DMEhSqKpH7N/?utm_source=ig_embed&utm_campaign=loading" },
-  { id: "fb-5", platform: "facebook",  src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2FRedWhiteandTrueNews%2Fposts%2Fpfbid02Gek3EpVNXb2NFNvLr1pDnejqaC2x78BH5TP7L5VN5NGE2wYWMY6R2QGdbzMq6royl&show_text=true&width=500" },
-  { id: "ig-5", platform: "instagram", permalink: "https://www.instagram.com/p/COs9HATMNGN/?utm_source=ig_embed&utm_campaign=loading" }
+  // ---- False Conspiratorial ----
+  {
+    id: "fb-1",
+    platform: "facebook",
+    condition: "false_conspiratorial",
+    headline: "Alien whistleblower",
+    src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fthepeoplesvoicetv%2Fposts%2Fpfbid0b537JYCwGfzNqYyPaBHF4sMbZHq657ALUefTAwjFvj9JM3ck4sHtB2BdyfoGmmZcl&show_text=true&width=500"
+  },
+  {
+    id: "ig-5",
+    platform: "instagram",
+    condition: "false_conspiratorial",
+    headline: "Docs reveal China discussed weaponizing COVID 5 years prior",
+    permalink: "https://www.instagram.com/p/COs9HATMNGN/"
+  },
+
+  // ---- False Non-Conspiratorial Sensational ----
+  {
+    id: "fb-2",
+    platform: "facebook",
+    condition: "false_sensational",
+    headline: "War with Iran → draft reinstated",
+    src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2FEmpireNewsNet%2Fposts%2Fpfbid06RJ9yyoK3NoeAXjnPiBo2rrotRh9cpU58HvTaMyz88huC1JzRuMvRqVjzZH67U8El&show_text=true&width=500"
+  },
+  {
+    id: "fb-3",
+    platform: "facebook",
+    condition: "false_sensational",
+    headline: "Travis Kelce cold feet",
+    src: "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2FTheOnion%2Fposts%2Fpfbid039GfuLZTgAWgG6YTdBGZncdf2ZAJJ6PKo5ZuMsRzBQsxkZbtnXaLURxMzV3F5uqFl&show_text=true&width=500"
+  },
+
+  // ---- True Neutral Informational ----
+  {
+    id: "ig-4",
+    platform: "instagram",
+    condition: "true_neutral",
+    headline: "Earth is spinning faster",
+    permalink: "https://www.instagram.com/p/DMZjzVBIPP3/"
+  },
+  {
+    id: "ig-6",
+    platform: "instagram",
+    condition: "true_neutral",
+    headline: "Earth is potentially in a cosmic void",
+    permalink: "https://www.instagram.com/p/DMEhSqKpH7N/"
+  },
+
+  // ---- True Attention-Grabbing Factual ----
+  {
+    id: "ig-1",
+    platform: "instagram",
+    condition: "true_attention",
+    headline: "NASA → asteroid",
+    permalink: "https://www.instagram.com/reel/DPCI77UlWpA/"
+  },
+  {
+    id: "ig-3",
+    platform: "instagram",
+    condition: "true_attention",
+    headline: "One mice, two dads",
+    permalink: "https://www.instagram.com/p/BozSeF9FS6s/"
+  }
 ];
 
 shuffle(POSTS);
@@ -134,13 +184,31 @@ function renderPost(index) {
   const settle = () => { if (settled) return; settled = true; unmountSpinner(embedWrap); };
 
   if (post.platform === "facebook") {
+    // Build a src with an appropriate width so FB lays out text correctly
+    const fbSrcWithWidth = (src, w) => {
+      try {
+        const u = new URL(src);
+        u.searchParams.set("width", String(w));
+        u.searchParams.set("show_text", "true");
+        u.searchParams.set("adapt_container_width", "true");
+        return u.toString();
+      } catch {
+        return src;
+      }
+    };
+  
+    // Compute a good width for the embed (FB supports roughly 350–750px)
+    const wrapW = Math.max(350, Math.min(750, Math.floor(embedWrap.clientWidth || 700)));
+  
     const iframe = document.createElement("iframe");
-    iframe.src = post.src;
-    iframe.width = "500";
-    iframe.height = "520";
+    iframe.className = "fb-post-embed";
+    iframe.src = fbSrcWithWidth(post.src, wrapW);
+    iframe.setAttribute("width", "100%");
+    iframe.style.width = "100%";
+    iframe.style.maxWidth = "750px";
+    iframe.setAttribute("height", String(Math.round(wrapW * 1.1))); // reasonable starting height
     iframe.style.border = "none";
     iframe.style.overflow = "hidden";
-    iframe.style.maxWidth = "100%";
     iframe.scrolling = "no";
     iframe.allowFullscreen = true;
     iframe.frameBorder = "0";
@@ -173,7 +241,6 @@ function renderPost(index) {
     });
     obs.observe(embedWrap, { childList: true, subtree: true });
   
-    // Safety timeout
     setTimeout(settle, 12000);
   
   } else if (post.platform === "twitter") {
