@@ -163,7 +163,7 @@ const sections = [
 ====================== */
 let sIndex = 0;      // current section index
 let qIndex = -1;     // -1 = show section intro
-const answers = { background:{}, hsns:[], gcb:[], etmc:[] };
+const answers = { background:{}, hsns:[], gcb:[], etmc:[], specific_claims:[] };
 
 const card = document.getElementById("card");
 const backBtn = document.getElementById("backBtn");
@@ -445,13 +445,16 @@ async function submitSurvey(){
       hsns: answers.hsns,
       gcb:  answers.gcb,
       etmc: answers.etmc,
+      specific_claims: answers.specific_claims,
       scores: {
         hsns_mean: mean(answers.hsns),
         hsns_sum:  sum(answers.hsns),
         gcb_mean:  mean(answers.gcb),
         gcb_sum:   sum(answers.gcb),
         etmc_mean: mean(answers.etmc),
-        etmc_sum:  sum(answers.etmc)
+        etmc_sum:  sum(answers.etmc),
+        claims_mean: mean(answers.specific_claims),
+        claims_sum:  sum(answers.specific_claims)
       }
     }
   };
