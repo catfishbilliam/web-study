@@ -8,6 +8,34 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+<script>
+    // Redirect or show message for mobile and tablets
+    document.addEventListener("DOMContentLoaded", () => {
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod|Tablet|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        document.body.innerHTML = `
+          <div style="
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-direction:column;
+            height:100vh;
+            background:#0A1A22;
+            color:#fff;
+            font-family:sans-serif;
+            text-align:center;
+            padding:2rem;
+          ">
+            <h1 style="font-size:1.8rem;">Desktop Required</h1>
+            <p style="max-width:420px; margin-top:1rem; line-height:1.5;">
+              This experience is optimized for desktop browsers and is not available on mobile or tablet devices.
+              Please visit from a computer to continue.
+            </p>
+          </div>
+        `;
+      }
+    });
+  </script>
 </head>
 <body>
   <p>If you are not redirected automatically, <a href="landing.html">click here</a>.</p>
