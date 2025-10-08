@@ -14,9 +14,9 @@
     --bg:#0A1A22;
     --card-bg:#D7DADB;
     --border:#4E6E73;
-    --text:#000;               /* main body text — black */
+    --text:#000;               
     --muted:#4E6E73;
-    --accent:#16333A;          /* headings, buttons, highlights */
+    --accent:#16333A;         
     --accent-light:#7FA6A1;
     --focus-ring:0 0 0 3px rgba(127,166,161,.35);
   }
@@ -105,7 +105,7 @@
     border-radius:14px;
     padding:24px;
     box-shadow:0 1px 3px rgba(0,0,0,.25);
-    color:var(--text); /* ensure card copy is black */
+    color:var(--text); 
   }
   .wizard-card{
     max-width:760px;
@@ -123,7 +123,7 @@
   }
   .section-desc{
     margin:0 auto 4px;
-    color:var(--text);          /* black body copy */
+    color:var(--text);          
     max-width:680px;
     text-align:left;
   }
@@ -239,7 +239,7 @@
   }
   .rating-row{ margin:18px 0; }
   
-  /* ====== Iframe (if used) ====== */
+  /* ====== Iframe ====== */
   .form-frame{
     width:100%;
     height:80vh;
@@ -255,7 +255,6 @@
     display: none !important;
   }
   
-  /* Ensure all text elements inside cards inherit the black body color */
   .card :where(p,li,label,input,select,textarea){ color:var(--text); }
   
   /* Bigger, accessible radio/checkbox targets & focus */
@@ -277,7 +276,6 @@
     to{ opacity:1; transform:translateY(0); }
   }
 
-  /* ====== Ensure body text is black in all sections ====== */
 header p,
 .card p,
 .section-desc,
@@ -286,7 +284,6 @@ header p,
   color: var(--text) !important;
 }
 
-/* Keep muted text gray only where explicitly marked */
 .muted,
 .small {
   color: var(--muted) !important;
@@ -295,18 +292,17 @@ header p,
 /* ---------- Task page helpers (embed) ---------- */
 .embed-wrap {
     display: flex;
-    justify-content: center;     /* centers the post */
+    justify-content: center;     
     align-items: flex-start;
     padding: 8px;
   }
   
   .ig-embed {
     width: 100%;
-    max-width: 540px;            /* Instagram’s max */
+    max-width: 540px;          
     min-width: 300px;
   }
   
-  /* Make the task header match spacing of landing header */
   .header-card + .wizard-card { margin-top: 8px; }
   
 /* Centered ratings card layout */
@@ -329,7 +325,7 @@ header p,
   
   .q-text.center { text-align: center; }
   
-  /* Sliders: centered and wide, with visible ticks underneath */
+  /* Sliders */
   .ratings-card input[type="range"] {
     width: min(92%, 900px);
   }
@@ -346,7 +342,6 @@ header p,
   
   .scale-ticks span { min-width: 1ch; text-align: center; }
   
-  /* Center the select and button */
   .ratings-card select {
     width: min(92%, 900px);
     padding: 12px;
@@ -361,7 +356,7 @@ header p,
     width: 100%;
   }
   
-/* --- Post embed spinner (improved contrast & size) --- */
+/* --- Post embed spinner --- */
 .embed-wrap {
     position: relative;
   }
@@ -372,7 +367,7 @@ header p,
     display: grid;
     place-items: center;
     pointer-events: none;
-    background: rgba(10, 26, 34, 0.25); /* darker overlay for contrast */
+    background: rgba(10, 26, 34, 0.25); 
     transition: opacity 0.3s ease;
   }
   
@@ -380,8 +375,8 @@ header p,
     width: 64px; 
     height: 64px;
     border-radius: 50%;
-    border: 6px solid #D7DADB;          /* light neutral for contrast */
-    border-top-color: #7FA6A1;          /* teal accent highlight */
+    border: 6px solid #D7DADB;          
+    border-top-color: #7FA6A1;          
     animation: spin 0.9s linear infinite;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
   }
@@ -395,7 +390,6 @@ header p,
     to { transform: rotate(360deg); }
   }
 
-/* Smooth fade-in for revealed ratings section */
 .ratings-card {
     opacity: 1;
     transition: opacity 0.4s ease;
@@ -404,145 +398,4 @@ header p,
   .hidden {
     opacity: 0;
     pointer-events: none;
-  }
-  
- /* ====== Responsive Media Queries ====== */
-
-/* Tablet (≤1024px) */
-@media (max-width: 1024px) {
-    .container {
-      max-width: 90%;
-      padding: 24px 16px 72px;
-    }
-  
-    header, footer, .card {
-      padding: 20px;
-    }
-  
-    header h1 {
-      font-size: 24px;
-      text-align: center;
-    }
-  
-    .wizard-card h2 {
-      font-size: 20px;
-    }
-  
-    .section-desc {
-      font-size: 16px;
-    }
-  
-    .btn {
-      min-width: 120px;
-      padding: 10px 14px;
-      font-size: 15px;
-    }
-  
-    .likert-row {
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-  
-    .likert-row .opt {
-      min-width: 64px;
-      height: 48px;
-      font-size: 15px;
-    }
-  
-    .progress-wrap {
-      max-width: 400px;
-    }
-  }
-  
-  /* Mobile (≤640px) */
-  @media (max-width: 640px) {
-    body {
-      font-size: 15px;
-      line-height: 1.6;
-    }
-  
-    .container {
-      padding: 20px 14px 64px;
-      gap: 18px;
-    }
-  
-    header, footer, .card {
-      border-radius: 10px;
-      padding: 18px;
-    }
-  
-    header h1 {
-      font-size: 22px;
-      text-align: center;
-    }
-  
-    .wizard-card {
-      padding: 16px;
-    }
-  
-    .wizard-card h2 {
-      font-size: 18px;
-    }
-  
-    .section-desc {
-      font-size: 15px;
-      text-align: left;
-    }
-  
-    .btn {
-      min-width: 100px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      font-size: 14px;
-    }
-  
-    .controls {
-      flex-direction: column;
-      gap: 10px;
-    }
-  
-    .likert-row {
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-    }
-  
-    .likert-row .opt {
-      min-width: 58px;
-      height: 46px;
-      font-size: 14px;
-      border-radius: 10px;
-      padding: 0 10px;
-    }
-  
-    footer {
-      font-size: 12px;
-    }
-  }
-  
-  /* Small Mobile (≤420px) */
-  @media (max-width: 420px) {
-    header h1 {
-      font-size: 20px;
-    }
-  
-    .wizard-card h2 {
-      font-size: 17px;
-    }
-  
-    .section-desc {
-      font-size: 14px;
-    }
-  
-    .likert-row .opt {
-      min-width: 52px;
-      height: 42px;
-      font-size: 13px;
-    }
-  
-    .btn {
-      font-size: 13px;
-      padding: 8px 10px;
-    }
   }

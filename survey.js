@@ -1,8 +1,8 @@
 /* ======================
    CONFIG
 ====================== */
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbyFF64b8m-06gFnDltUGf5wd_1PKIrXQUnAhcjKYBnb2WeEeoNme0MCLnWmPkAGm-ZsTg/exec"; // same web app used by task, routes by meta.phase
-const NEXT_URL = "task.html"; // redirect after finishing
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyFF64b8m-06gFnDltUGf5wd_1PKIrXQUnAhcjKYBnb2WeEeoNme0MCLnWmPkAGm-ZsTg/exec"; 
+const NEXT_URL = "task.html"; 
 const TOKEN = (() => {
   const qs = new URLSearchParams(location.search);
   const t = qs.get("token") || sessionStorage.getItem("link_token") || Math.random().toString(36).slice(2,10).toUpperCase();
@@ -14,7 +14,6 @@ document.getElementById("tokenBadge").textContent = `Link code: ${TOKEN}`;
 
 /* ======================
    ITEMS (background + HSNS + ETMC + GCB)
-   (Edit texts here without touching logic)
 ====================== */
 const BG = [
   {
@@ -119,7 +118,6 @@ const PROFESSOR_ITEMS = [
   "The government is trying to cover up the link between vaccines and autism."
 ];
 
-// ====== Combine & shuffle ======
 function shuffle(array) {
   let currentIndex = array.length, randomIndex;
   while (currentIndex !== 0) {
@@ -133,7 +131,6 @@ function shuffle(array) {
   return array;
 }
 
-// Merge and randomly intersperse professor’s items among originals
 const GCB_ITEMS = shuffle([...ORIGINAL_GCB, ...PROFESSOR_ITEMS]);
 
 console.log(GCB_ITEMS);
@@ -199,7 +196,6 @@ function scaleLegend(secKey) {
 }
 
 function legendList(labels) {
-  // Renders a clean bullet list: 1 = ..., 2 = ...
   const items = labels.map((txt, i) => `<li><strong>${i+1}</strong> = ${txt}</li>`).join("");
   return `
     <div class="scale-legend">
@@ -229,7 +225,6 @@ function render() {
   card.innerHTML = "";
 
   if (qIndex < 0) {
-    // Section intro ALWAYS shows, then user proceeds
     const h = `
       <h2>${sec.intro.title}</h2>
       <p class="section-desc">${sec.intro.desc}</p>
@@ -242,7 +237,6 @@ function render() {
     return;
   }
 
-  // Question card (always shows all options)
   const n = qIndex + 1;
   let html = `<div class="q-num">Question ${n} of ${sec.items.length}</div>`;
 
@@ -292,10 +286,8 @@ function render() {
 
   card.insertAdjacentHTML("beforeend", html);
 
-  // restore value if present
   restoreValue(sec, qIndex);
 
-  // Disable “Next” until a choice is made for radios/likert
   if (sec.type === "background") {
     const item = sec.items[qIndex];
     if (item.type === "radio") {
@@ -304,7 +296,7 @@ function render() {
         r.addEventListener("change", () => { nextBtn.disabled = false; });
       });
     } else {
-      nextBtn.disabled = false; // number has min/max guard on read
+      nextBtn.disabled = false; 
     }
   } else {
     const item = sec.items[qIndex];
@@ -347,7 +339,7 @@ function restoreValue(sec, idx){
 
 function readCurrentAnswer() {
   const sec = sections[sIndex];
-  if (qIndex < 0) return true; // intro
+  if (qIndex < 0) return true; 
 
   if (sec.type === "background"){
     const item = sec.items[qIndex];
@@ -390,11 +382,9 @@ function next() {
   if (qIndex < sec.items.length - 1) {
     qIndex++;
   } else {
-    // move to next section intro
     if (sIndex < sections.length - 1) {
       sIndex++; qIndex = -1;
     } else {
-      // finished
       submitSurvey();
       return;
     }
@@ -456,10 +446,8 @@ async function submitSurvey(){
   const body = new URLSearchParams({ payload: JSON.stringify(payload) }).toString();
   const blob = new Blob([body], { type: "application/x-www-form-urlencoded" });
 
-  // sendBeacon first (fire-and-forget)
   const sent = navigator.sendBeacon && navigator.sendBeacon(ENDPOINT, blob);
   if (!sent) {
-    // Fallback fetch; no-cors is fine (we don't read the response)
     try {
       await fetch(ENDPOINT, {
         method: "POST",
@@ -488,5 +476,4 @@ document.addEventListener("keydown", (e)=>{
   }
 });
 
-// Initial render (first section intro)
 render();

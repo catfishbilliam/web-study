@@ -1,7 +1,7 @@
 // ====== CONFIG ======
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbyFF64b8m-06gFnDltUGf5wd_1PKIrXQUnAhcjKYBnb2WeEeoNme0MCLnWmPkAGm-ZsTg/exec"; // doPost logger
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyFF64b8m-06gFnDltUGf5wd_1PKIrXQUnAhcjKYBnb2WeEeoNme0MCLnWmPkAGm-ZsTg/exec"; 
 const PROLIFIC_CODE = "CIXRDKFP";
-const DEV_SHOW_REDIRECT = false; // set true only during dev
+const DEV_SHOW_REDIRECT = false; 
 
 // ====== TOKEN (URL or session) ======
 const qs = new URLSearchParams(location.search);
@@ -16,13 +16,10 @@ if (tokenBadgeEl) tokenBadgeEl.textContent = `Link code: ${TOKEN}`;
 function shuffle(array) {
   let currentIndex = array.length, randomIndex;
 
-  // While there remain elements to shuffle...
   while (currentIndex !== 0) {
-    // Pick a remaining element
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex--;
 
-    // Swap it with the current element
     [array[currentIndex], array[randomIndex]] = [
       array[randomIndex], array[currentIndex]
     ];
@@ -63,10 +60,8 @@ const progressBar   = document.querySelector("#progressBar > span");
 const mainCard      = document.querySelector("main.wizard-card");
 const thanksCard    = document.getElementById("thanks");
 
-// Action buttons (static in DOM)
 const actionBtns = document.querySelectorAll(".feed-actions .btn");
 
-// ====== Per-post state (resets each post) ======
 const state = {
   token: TOKEN,
   action: null,
@@ -75,7 +70,6 @@ const state = {
   shareIntent: ""
 };
 
-// ====== Helpers: ensure Instagram embed script exists ======
 (function ensureIGScript() {
   if (!window.instgrm) {
     const s = document.createElement("script");
@@ -85,7 +79,6 @@ const state = {
   }
 })();
 
-// ====== Helpers: Spinner ======
 function mountSpinner(container) {
   if (!container) return;
   if (getComputedStyle(container).position === "static") {
@@ -111,15 +104,12 @@ function unmountSpinner(container) {
   if (overlay) overlay.style.display = "none";
 }
 
-// ====== Render current post into #embedWrap ======
 function renderPost(index) {
-  // ---- Accurate progress: current/total ----
   const total = POSTS.length;
-  const n = Math.min(Math.max(index + 1, 1), total);   // 1..total
+  const n = Math.min(Math.max(index + 1, 1), total);   
   if (progressText) progressText.textContent = `Post ${n} of ${total}`;
   if (progressBar)  progressBar.style.width = `${Math.round((n / total) * 100)}%`;
 
-  // Reset per-post state and UI
   state.action = null;
   state.accuracy = 3;
   state.confidence = 3;
@@ -131,7 +121,6 @@ function renderPost(index) {
   confidenceEl.value = "3";
   shareSel.value = "";
 
-  // Clear wrapper & mount spinner
   embedWrap.innerHTML = `
     <div class="spinner-overlay" aria-live="polite" aria-label="Loading post…">
       <div class="spinner"></div>
@@ -162,7 +151,6 @@ function renderPost(index) {
     setTimeout(settle, 12000);
   
   } else if (post.platform === "instagram") {
-    // Create IG blockquote; instagram script will inject an iframe
     const block = document.createElement("blockquote");
     block.className = "instagram-media ig-embed";
     block.setAttribute("data-instgrm-captioned", "");
@@ -174,10 +162,8 @@ function renderPost(index) {
     });
     embedWrap.appendChild(block);
   
-    // Ask IG to process if available
     if (window.instgrm?.Embeds?.process) window.instgrm.Embeds.process();
   
-    // Watch for the injected iframe, then settle on its load
     const obs = new MutationObserver(() => {
       const igFrame = embedWrap.querySelector("iframe");
       if (igFrame) {
@@ -191,7 +177,6 @@ function renderPost(index) {
     setTimeout(settle, 12000);
   
   } else if (post.platform === "twitter") {
-    // Support either explicit tweetId or a full URL in post.src
     const extractId = (u) => {
       const m = String(u || "").match(/status\/(\d+)/);
       return m ? m[1] : null;
@@ -206,20 +191,17 @@ function renderPost(index) {
       return true;
     };
   
-    // If widgets.js is ready, create immediately; otherwise wait
     if (!tryCreate() && window.twttr?.ready) {
       window.twttr.ready(() => { tryCreate(); });
     }
   
-    // Safety timeout
     setTimeout(settle, 12000);
   }
 }
 
-// ====== Interaction buttons reveal ratings ======
 actionBtns.forEach(btn => {
   btn.addEventListener("click", () => {
-    state.action = btn.dataset.action; // like | share | report | skip
+    state.action = btn.dataset.action; 
     actionBtns.forEach(b => { b.disabled = true; b.classList.remove("primary"); });
     btn.classList.add("primary");
 
@@ -230,7 +212,6 @@ actionBtns.forEach(btn => {
   });
 });
 
-// ====== Capture slider/select inputs ======
 accuracyEl.addEventListener("input", () => {
   const v = Number(accuracyEl.value);
   state.accuracy = Number.isFinite(v) ? v : 3;
@@ -240,10 +221,9 @@ confidenceEl.addEventListener("input", () => {
   state.confidence = Number.isFinite(v) ? v : 3;
 });
 
-// ====== Submit handler: send row, advance or debrief ======
 submitBtn.addEventListener("click", async () => {
   if (!state.action) {
-    alert("Please choose an interaction (Like, Share, Report, or Skip) before submitting.");
+    alert("Please choose an interaction (Like, Comment, Report, or Skip) before submitting.");
     return;
   }
   if (!state.accuracy || Number.isNaN(state.accuracy)) {
@@ -272,7 +252,6 @@ submitBtn.addEventListener("click", async () => {
     }
   };
 
-  // Send to Apps Script (form-encoded)
   const body = new URLSearchParams({ payload: JSON.stringify(payload) }).toString();
   try {
     await fetch(ENDPOINT, {
@@ -286,20 +265,16 @@ submitBtn.addEventListener("click", async () => {
     console.error("[task] POST failed", err);
   }
 
-  // 👇 Snap page back to the top right after submission
   window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // Advance or finish
   if (currentIndex < POSTS.length - 1) {
     currentIndex += 1;
     renderPost(currentIndex);
   } else {
-    // Finished all posts — show debrief
     document.querySelector("main.wizard-card")?.classList.add("hidden");
     document.getElementById("ratingsCard")?.classList.add("hidden");
     document.getElementById("thanks")?.classList.remove("hidden");
 
-    // Scroll to top again to show the debrief immediately
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const codeEl = document.getElementById("code");
@@ -307,7 +282,6 @@ submitBtn.addEventListener("click", async () => {
   }
 });
 
-// ====== Start ======
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => renderPost(currentIndex));
 } else {

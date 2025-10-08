@@ -4,60 +4,43 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Part 2: Brief Browsing Task</title>
-
-  <!-- Sansation font (matches landing.html) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="container">
-
-    <!-- Header card -->
     <header class="card header-card">
       <div class="top-row">
         <h1>Part 2: Brief Browsing Task</h1>
         <span id="tokenBadge" class="pill"></span>
       </div>
-
       <p class="muted">
         Please take a moment to watch or read the post below. Use the buttons beneath it to indicate whether you would
         <strong>like</strong>, <strong>share</strong>, <strong>report</strong>, or <strong>skip</strong> the post—just as you might on a social media platform.
         After interacting, answer the short questions that follow about how accurate you think the post is, how confident you are in that judgment, and whether you would share it.
       </p>
-
       <div class="progress-wrap" aria-live="polite">
         <div id="progressBar" class="progress-bar"><span></span></div>
         <div id="progressText" class="progress-text small muted">Post 1 of 3</div>
       </div>
     </header>
-
-    <!-- Post card (JS swaps the embed inside this one wrapper) -->
     <main class="card wizard-card" aria-live="polite">
       <div id="embedWrap" class="embed-wrap">
-        <!-- Spinner overlay (auto-controlled by task.js) -->
         <div class="spinner-overlay" aria-live="polite" aria-label="Loading post…">
           <div class="spinner"></div>
           <div class="spinner-text small">Loading post…</div>
         </div>
-        <!-- JS will inject the current post here -->
       </div>
-
-      <!-- IG embed script (needed for IG posts to render) -->
       <script async src="//www.instagram.com/embed.js"></script>
-
-      <!-- Interaction buttons -->
       <div class="feed-actions">
         <button class="btn" data-action="like">Like</button>
-        <button class="btn" data-action="share">Share</button>
+        <button class="btn" data-action="comment">Comment</button>
         <button class="btn" data-action="report">Report</button>
         <button class="btn" data-action="skip">Skip</button>
       </div>
     </main>
-
-    <!-- Ratings (hidden until interaction) -->
     <div id="ratingsCard" class="card ratings-card hidden">
       <div class="rating-row">
         <label for="accuracy" class="q-text center">
@@ -69,7 +52,6 @@
           <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
         </div>
       </div>
-
       <div class="rating-row">
         <label for="accuracyConfidence" class="q-text center">
           <strong>How confident are you in your accuracy rating?</strong>
@@ -80,7 +62,6 @@
           <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
         </div>
       </div>
-
       <div class="rating-row full">
         <label for="shareIntent" class="q-text center">
           <strong>Would you share this post?</strong>
@@ -91,17 +72,13 @@
           <option value="yes">Yes</option>
         </select>
       </div>
-
       <div class="controls centered-controls">
         <button id="submitTask" class="btn primary" type="button">Submit</button>
       </div>
     </div>
-
-    <!-- Debrief (shown after the last post is submitted) -->
     <div id="thanks" class="card hidden" style="margin-top:16px;">
       <h2>Thank you!</h2>
       <p class="muted">Your responses were recorded.</p>
-
       <h3>Debrief</h3>
       <p>
         This study explores how people evaluate the accuracy of information from different sources and how personality traits and levels of trust may shape those judgments. In particular, the study examines the concept of epistemic mistrust — the tendency to doubt the reliability or honesty of information shared by others. Understanding how epistemic mistrust affects information processing can help researchers learn more about why some people find certain claims more believable than others.
@@ -122,19 +99,14 @@
       <p>Your responses are anonymous and confidential.</p>
       <p>If you have questions or would like more information about this research, please contact the study investigator at <a href="mailto:wconway2@umd.edu">wconway2@umd.edu</a>.</p>
       <p>Thank you again for contributing to research on how people think about trust, information, and accuracy.</p>
-
       <hr />
       <p><strong>Your Prolific completion code:</strong> <span id="code" class="pill">CIXRDKFP</span></p>
     </div>
-
     <footer class="card foot-card">
       <div class="small muted">Your responses are anonymous. By continuing, you confirm you are 18+ and consent to participate.</div>
     </footer>
-
   </div>
-
   <script>
-    // Show the token like on landing.html
     (function () {
       const qs = new URLSearchParams(location.search);
       const t = qs.get("token") || sessionStorage.getItem("link_token") || "";
