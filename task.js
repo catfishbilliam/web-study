@@ -1,9 +1,7 @@
-// ====== CONFIG ======
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbyI-OeUgLbyZjc51xcl3A23VcQnd61NjZmpOSTXrtbvsQ_9AW3S7lO5t-o-4iuWkyOzIg/exec";
 const PROLIFIC_CODE = "CIXRDKFP";
 const DEV_SHOW_REDIRECT = false;
 
-// ====== TOKEN (URL or session) ======
 const qs = new URLSearchParams(location.search);
 let TOKEN = qs.get("token") || sessionStorage.getItem("link_token") || "";
 if (!TOKEN) {
@@ -13,7 +11,6 @@ sessionStorage.setItem("link_token", TOKEN);
 const tokenBadgeEl = document.getElementById("tokenBadge");
 if (tokenBadgeEl) tokenBadgeEl.textContent = `Link code: ${TOKEN}`;
 
-// ====== Utils ======
 function shuffle(array) {
   let currentIndex = array.length, randomIndex;
   while (currentIndex !== 0) {
@@ -24,21 +21,32 @@ function shuffle(array) {
   return array;
 }
 
-// ---- Persisted order & progress ----
-const STORAGE_KEY = `task_progress_${TOKEN}`;
+const TASK_STORAGE_KEY = `task_progress_${TOKEN}`;
+const TASK_VERSION = 2;
 
-function loadProgress() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }
-  catch { return null; }
-}
-function saveProgress(patch = {}) {
-  const prev = loadProgress() || {};
-  const next = { ...prev, ...patch };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  return next;
+function loadTaskProgress() {
+  try {
+    const raw = localStorage.getItem(TASK_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.v !== TASK_VERSION) return null;
+    return parsed;
+  } catch { return null; }
 }
 
-// Base list (your POSTS content moves here unchanged)
+function saveTaskProgress(patch = {}) {
+  try {
+    const prev = loadTaskProgress() || { v: TASK_VERSION, when: Date.now(), currentIndex: 0, responses: {} };
+    const next = { ...prev, ...patch, v: TASK_VERSION, when: Date.now() };
+    localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(next));
+    return next;
+  } catch { return null; }
+}
+
+function clearTaskProgress() {
+  try { localStorage.removeItem(TASK_STORAGE_KEY); } catch {}
+}
+
 const BASE_POSTS = [
   // ---- False Conspiratorial ----
   {
@@ -100,13 +108,12 @@ const BASE_POSTS = [
     id: "ig-3",
     platform: "instagram",
     condition: "true_attention",
-    headline: "One mice, two dads",
+    headline: "One mouse, two dads",
     permalink: "https://www.instagram.com/p/BozSeF9FS6s/"
   }
 ];
 
-// Build the session's order once, then reuse it
-const saved = loadProgress();
+const saved = loadTaskProgress();
 let POSTS;
 if (saved?.orderIds?.length) {
   POSTS = saved.orderIds
@@ -114,10 +121,9 @@ if (saved?.orderIds?.length) {
     .filter(Boolean);
 } else {
   POSTS = shuffle([...BASE_POSTS]);
-  saveProgress({ orderIds: POSTS.map(p => p.id), currentIndex: 0 });
+  saveTaskProgress({ orderIds: POSTS.map(p => p.id), currentIndex: 0 });
 }
 
-// Start from saved index if available
 let currentIndex = Math.max(0, Math.min(saved?.currentIndex ?? 0, POSTS.length - 1));
 
 
@@ -142,38 +148,29 @@ const state = {
   startTime: null
 };
 
-const TASK_STORAGE_KEY = `task_progress_${TOKEN}`;
-const TASK_VERSION = 1;
+const DEFAULT_RESPONSE = { action: null, accuracy: 3, confidence: 3, shareIntent: "" };
 
-function loadTaskProgress() {
-  try {
-    const raw = localStorage.getItem(TASK_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed?.v !== TASK_VERSION) return null;
-    return parsed;
-  } catch { return null; }
+let submitting = false;
+const SUBMIT_LABEL = submitBtn ? submitBtn.textContent : "Submit";
+
+function lockUI() {
+  submitting = true;
+  submitBtn.disabled = true;
+  submitBtn.setAttribute("aria-busy", "true");
+  submitBtn.textContent = "Submitting…";
+  actionBtns.forEach(b => (b.disabled = true));
+  ratingsCard.querySelectorAll("input, select, button").forEach(el => (el.disabled = true));
+  mountSpinner(embedWrap);
 }
-function saveTaskProgress() {
-  try {
-    const payload = {
-      v: TASK_VERSION,
-      when: Date.now(),
-      currentIndex,
-      state: {
-        action: state.action,
-        accuracy: state.accuracy,
-        confidence: state.confidence,
-        shareIntent: state.shareIntent,
-        startTime: state.startTime
-      }
-    };
-    localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(payload));
-  } catch {}
+
+function unlockUI() {
+  submitting = false;
+  submitBtn.disabled = false;
+  submitBtn.removeAttribute("aria-busy");
+  submitBtn.textContent = SUBMIT_LABEL;
+  ratingsCard.querySelectorAll("input, select, button").forEach(el => (el.disabled = false));
 }
-function clearTaskProgress() {
-  try { localStorage.removeItem(TASK_STORAGE_KEY); } catch {}
-}
+
 
 (function ensureIGScript() {
   if (!window.instgrm) {
@@ -223,13 +220,23 @@ function renderPost(index) {
   if (progressText) progressText.textContent = `Post ${n} of ${total}`;
   if (progressBar)  progressBar.style.width = `${Math.round((n / total) * 100)}%`;
 
-  saveProgress({ currentIndex: index });
+  unlockUI();
+
+  const prog = loadTaskProgress() || { responses: {} };
+  const savedForThis = prog.responses?.[index] || null;
+
+  state.action      = savedForThis?.action      ?? DEFAULT_RESPONSE.action;
+  state.accuracy    = Number.isFinite(savedForThis?.accuracy)   ? savedForThis.accuracy   : DEFAULT_RESPONSE.accuracy;
+  state.confidence  = Number.isFinite(savedForThis?.confidence) ? savedForThis.confidence : DEFAULT_RESPONSE.confidence;
+  state.shareIntent = savedForThis?.shareIntent ?? DEFAULT_RESPONSE.shareIntent;
+
+  state.startTime = performance.now();
 
   actionBtns.forEach(b => { b.disabled = false; b.classList.remove("primary"); });
   ratingsCard.classList.add("hidden");
-  accuracyEl.value = "3";
-  confidenceEl.value = "3";
-  shareSel.value = "";
+  accuracyEl.value   = String(state.accuracy);
+  confidenceEl.value = String(state.confidence);
+  shareSel.value     = String(state.shareIntent);
 
   if (state.action) {
     actionBtns.forEach(b => {
@@ -237,18 +244,9 @@ function renderPost(index) {
       b.classList.toggle("primary", b.dataset.action === state.action);
     });
     ratingsCard.classList.remove("hidden");
-    accuracyEl.value   = String(state.accuracy ?? 3);
-    confidenceEl.value = String(state.confidence ?? 3);
-    shareSel.value     = String(state.shareIntent ?? "");
   }
 
-  state.action      = state.action && POSTS[index] ? state.action : null;
-  state.accuracy    = Number.isFinite(state.accuracy) ? state.accuracy : 3;
-  state.confidence  = Number.isFinite(state.confidence) ? state.confidence : 3;
-  state.shareIntent = state.shareIntent || "";
-
-  state.startTime = performance.now();
-
+  // Spinner…
   embedWrap.innerHTML = `
     <div class="spinner-overlay" aria-live="polite" aria-label="Loading post…">
       <div class="spinner"></div>
@@ -257,7 +255,8 @@ function renderPost(index) {
   `;
   mountSpinner(embedWrap);
 
-  saveTaskProgress();
+  // Persist current index
+  saveTaskProgress({ currentIndex: index });
 
   const post = POSTS[index];
   let settled = false;
@@ -337,32 +336,79 @@ function renderPost(index) {
 actionBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     state.action = btn.dataset.action;
+
+    // Lock buttons for this post
     actionBtns.forEach(b => { b.disabled = true; b.classList.remove("primary"); });
     btn.classList.add("primary");
+
     if (ratingsCard.classList.contains("hidden")) {
       ratingsCard.classList.remove("hidden");
       ratingsCard.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    saveTaskProgress();
+
+    const prog = loadTaskProgress() || { responses: {} };
+    const responses = prog.responses || {};
+    responses[currentIndex] = {
+      action: state.action,
+      accuracy: state.accuracy,
+      confidence: state.confidence,
+      shareIntent: state.shareIntent,
+      startTime: state.startTime
+    };
+    saveTaskProgress({ responses });
   });
 });
 
 accuracyEl.addEventListener("input", () => {
   const v = Number(accuracyEl.value);
   state.accuracy = Number.isFinite(v) ? v : 3;
-  saveTaskProgress();
+
+  const prog = loadTaskProgress() || { responses: {} };
+  const responses = prog.responses || {};
+  responses[currentIndex] = {
+    ...(responses[currentIndex] || DEFAULT_RESPONSE),
+    action: state.action,
+    accuracy: state.accuracy,
+    confidence: state.confidence,
+    shareIntent: state.shareIntent,
+    startTime: state.startTime
+  };
+  saveTaskProgress({ responses });
 });
 confidenceEl.addEventListener("input", () => {
   const v = Number(confidenceEl.value);
   state.confidence = Number.isFinite(v) ? v : 3;
-  saveTaskProgress();
+
+  const prog = loadTaskProgress() || { responses: {} };
+  const responses = prog.responses || {};
+  responses[currentIndex] = {
+    ...(responses[currentIndex] || DEFAULT_RESPONSE),
+    action: state.action,
+    accuracy: state.accuracy,
+    confidence: state.confidence,
+    shareIntent: state.shareIntent,
+    startTime: state.startTime
+  };
+  saveTaskProgress({ responses });
 });
 shareSel.addEventListener("input", () => {
   state.shareIntent = shareSel.value || "";
-  saveTaskProgress();
+
+  const prog = loadTaskProgress() || { responses: {} };
+  const responses = prog.responses || {};
+  responses[currentIndex] = {
+    ...(responses[currentIndex] || DEFAULT_RESPONSE),
+    action: state.action,
+    accuracy: state.accuracy,
+    confidence: state.confidence,
+    shareIntent: state.shareIntent,
+    startTime: state.startTime
+  };
+  saveTaskProgress({ responses });
 });
 
 submitBtn.addEventListener("click", async () => {
+  if (submitting) return;            
   if (!state.action) {
     alert("Please choose an interaction (Like, Comment, Report, or Skip) before submitting.");
     return;
@@ -371,7 +417,8 @@ submitBtn.addEventListener("click", async () => {
     alert("Please set a perceived accuracy rating.");
     return;
   }
-  state.shareIntent = shareSel.value || "";
+
+  lockUI();                          
 
   const post = POSTS[currentIndex];
   const dwellMs = performance.now() - (state.startTime || performance.now());
@@ -408,31 +455,43 @@ submitBtn.addEventListener("click", async () => {
     }
   };
 
-  const body = new URLSearchParams({ payload: JSON.stringify(payload) }).toString();
-
   try {
     await fetch(ENDPOINT, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body
+      body: new URLSearchParams({ payload: JSON.stringify(payload) }).toString()
     });
   } catch {}
 
-  saveTaskProgress();
+  const prog = loadTaskProgress() || { responses: {} };
+  const responses = prog.responses || {};
+  responses[currentIndex] = {
+    action: state.action,
+    accuracy: state.accuracy,
+    confidence: state.confidence,
+    shareIntent: state.shareIntent,
+    startTime: state.startTime,
+    submitted: true
+  };
+  saveTaskProgress({ responses });
+
   window.scrollTo({ top: 0, behavior: "smooth" });
-  state.startTime = performance.now();
 
   if (currentIndex < POSTS.length - 1) {
     currentIndex += 1;
-    saveTaskProgress();
-    renderPost(currentIndex);
+    state.action = null;
+    state.accuracy = 3;
+    state.confidence = 3;
+    state.shareIntent = "";
+    state.startTime = performance.now();
+    saveTaskProgress({ currentIndex });
+    renderPost(currentIndex);        
   } else {
     clearTaskProgress();
     document.querySelector("main.wizard-card")?.classList.add("hidden");
     document.getElementById("ratingsCard")?.classList.add("hidden");
     document.getElementById("thanks")?.classList.remove("hidden");
-    window.scrollTo({ top: 0, behavior: "smooth" });
     const codeEl = document.getElementById("code");
     if (codeEl) codeEl.textContent = PROLIFIC_CODE;
   }
@@ -449,4 +508,4 @@ window.addEventListener('resize', () => {
   if (post?.platform === 'facebook') renderPost(currentIndex);
 });
 
-window.addEventListener("beforeunload", saveTaskProgress);
+window.addEventListener("beforeunload", () => saveTaskProgress({}));
