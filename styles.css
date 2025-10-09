@@ -399,3 +399,104 @@ header p,
     opacity: 0;
     pointer-events: none;
   }
+
+  /* ===================================================
+   RESPONSIVE MEDIA QUERIES
+=================================================== */
+
+/* ====== Tablet (≤ 900px) ====== */
+@media (max-width: 900px) {
+    .container {
+      padding: 20px 16px 72px;
+    }
+  
+    header, footer, .card, .wizard-card {
+      padding: 16px;
+    }
+  
+    header h1 {
+      font-size: 22px;
+    }
+  
+    .progress-wrap, .ratings-card, .controls {
+      max-width: 100%;
+    }
+  
+    .likert-row {
+      gap: 8px;
+    }
+  
+    .likert-row .opt {
+      min-width: 60px;
+      height: 48px;
+      font-size: 14px;
+    }
+  
+    .btn {
+      min-width: 120px;
+      padding: 10px 14px;
+    }
+  
+    .embed-wrap iframe,
+    .ig-embed {
+      max-width: 100%;
+    }
+  }
+  
+  /* ====== Mobile (≤ 600px) ====== */
+  @media (max-width: 600px) {
+    body {
+      font-size: 15px;
+    }
+  
+    header h1 {
+      font-size: 20px;
+    }
+  
+    .container {
+      padding: 16px 12px 60px;
+    }
+  
+    .progress-text {
+      font-size: 11px;
+    }
+  
+    .card, .wizard-card {
+      padding: 14px;
+    }
+  
+    .q-text, .section-desc {
+      font-size: 15px;
+    }
+  
+    .btn {
+      width: 100%;
+      font-size: 15px;
+      padding: 12px;
+    }
+  
+    .controls,
+    .feed-actions {
+      flex-direction: column;
+      gap: 10px;
+    }
+  
+    .ratings-card input[type="range"],
+    .ratings-card select {
+      width: 100%;
+    }
+  
+    .scale-ticks {
+      font-size: 12px;
+    }
+  
+    .embed-wrap {
+      padding: 4px;
+    }
+  
+    iframe,
+    .ig-embed {
+      width: 100%;
+      min-width: 0;
+    }
+  }
