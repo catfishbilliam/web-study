@@ -1,4 +1,4 @@
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbyI-OeUgLbyZjc51xcl3A23VcQnd61NjZmpOSTXrtbvsQ_9AW3S7lO5t-o-4iuWkyOzIg/exec";
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbxD99yPVm5pmwDaEQItek4-vWGFVA_WlMHfVRR6giFTmRd4dafqYNSApaCbQnWn-p_K2A/exec";
 const PROLIFIC_CODE = "CIXRDKFP";
 const DEV_SHOW_REDIRECT = false;
 
@@ -133,6 +133,7 @@ const accuracyEl    = document.getElementById("accuracy");
 const confidenceEl  = document.getElementById("accuracyConfidence");
 const shareSel      = document.getElementById("shareIntent");
 const submitBtn     = document.getElementById("submitTask");
+let factCheckSel  = document.getElementById("factChecked");
 const progressText  = document.getElementById("progressText");
 const progressBar   = document.querySelector("#progressBar > span");
 const mainCard      = document.querySelector("main.wizard-card");
@@ -145,10 +146,11 @@ const state = {
   accuracy: 3,
   confidence: 3,
   shareIntent: "",
-  startTime: null
+  startTime: null,
+  factChecked: ""
 };
 
-const DEFAULT_RESPONSE = { action: null, accuracy: 3, confidence: 3, shareIntent: "" };
+const DEFAULT_RESPONSE = { action: null, accuracy: 3, confidence: 3, shareIntent: "", factChecked: "" };
 
 let submitting = false;
 const SUBMIT_LABEL = submitBtn ? submitBtn.textContent : "Submit";
@@ -168,7 +170,51 @@ function unlockUI() {
   submitBtn.disabled = false;
   submitBtn.removeAttribute("aria-busy");
   submitBtn.textContent = SUBMIT_LABEL;
-  ratingsCard.querySelectorAll("input, select, button").forEach(el => (el.disabled = false));
+}
+
+function setRatingsEnabled(on) {
+  if (!ratingsCard) return;
+  ratingsCard.querySelectorAll("input, select, button").forEach(el => {
+    el.disabled = !on;
+  });
+}
+
+function ensureFactCheckControl() {
+  if (!ratingsCard) return;
+  let existing = document.getElementById("factChecked");
+  if (!existing) {
+    const wrap = document.createElement("div");
+    wrap.className = "group";
+    wrap.innerHTML = `
+      <label class="small" for="factChecked">Did you fact-check this post?</label>
+      <select id="factChecked">
+        <option value="">Choose an option</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    `;
+    ratingsCard.appendChild(wrap);
+    existing = wrap.querySelector('#factChecked');
+  }
+  factCheckSel = existing;
+  if (factCheckSel && !factCheckSel.__bound) {
+    factCheckSel.addEventListener('input', () => {
+      state.factChecked = factCheckSel.value || "";
+      const prog = loadTaskProgress() || { responses: {} };
+      const responses = prog.responses || {};
+      responses[currentIndex] = {
+        ...(responses[currentIndex] || DEFAULT_RESPONSE),
+        action: state.action,
+        accuracy: state.accuracy,
+        confidence: state.confidence,
+        shareIntent: state.shareIntent,
+        factChecked: state.factChecked,
+        startTime: state.startTime
+      };
+      saveTaskProgress({ responses });
+    });
+    factCheckSel.__bound = true;
+  }
 }
 
 
@@ -221,6 +267,8 @@ function renderPost(index) {
   if (progressBar)  progressBar.style.width = `${Math.round((n / total) * 100)}%`;
 
   unlockUI();
+  setRatingsEnabled(false);
+  submitBtn.disabled = true;
 
   const prog = loadTaskProgress() || { responses: {} };
   const savedForThis = prog.responses?.[index] || null;
@@ -229,6 +277,7 @@ function renderPost(index) {
   state.accuracy    = Number.isFinite(savedForThis?.accuracy)   ? savedForThis.accuracy   : DEFAULT_RESPONSE.accuracy;
   state.confidence  = Number.isFinite(savedForThis?.confidence) ? savedForThis.confidence : DEFAULT_RESPONSE.confidence;
   state.shareIntent = savedForThis?.shareIntent ?? DEFAULT_RESPONSE.shareIntent;
+  state.factChecked = savedForThis?.factChecked ?? DEFAULT_RESPONSE.factChecked;
 
   state.startTime = performance.now();
 
@@ -237,6 +286,8 @@ function renderPost(index) {
   accuracyEl.value   = String(state.accuracy);
   confidenceEl.value = String(state.confidence);
   shareSel.value     = String(state.shareIntent);
+  ensureFactCheckControl();
+  if (factCheckSel) factCheckSel.value = String(state.factChecked || "");
 
   if (state.action) {
     actionBtns.forEach(b => {
@@ -244,9 +295,10 @@ function renderPost(index) {
       b.classList.toggle("primary", b.dataset.action === state.action);
     });
     ratingsCard.classList.remove("hidden");
+    setRatingsEnabled(true);
+    submitBtn.disabled = false;
   }
 
-  // Spinner…
   embedWrap.innerHTML = `
     <div class="spinner-overlay" aria-live="polite" aria-label="Loading post…">
       <div class="spinner"></div>
@@ -255,7 +307,6 @@ function renderPost(index) {
   `;
   mountSpinner(embedWrap);
 
-  // Persist current index
   saveTaskProgress({ currentIndex: index });
 
   const post = POSTS[index];
@@ -337,13 +388,14 @@ actionBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     state.action = btn.dataset.action;
 
-    // Lock buttons for this post
     actionBtns.forEach(b => { b.disabled = true; b.classList.remove("primary"); });
     btn.classList.add("primary");
 
     if (ratingsCard.classList.contains("hidden")) {
       ratingsCard.classList.remove("hidden");
       ratingsCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      setRatingsEnabled(true);
+      submitBtn.disabled = false;
     }
 
     const prog = loadTaskProgress() || { responses: {} };
@@ -353,6 +405,7 @@ actionBtns.forEach(btn => {
       accuracy: state.accuracy,
       confidence: state.confidence,
       shareIntent: state.shareIntent,
+      factChecked: state.factChecked,
       startTime: state.startTime
     };
     saveTaskProgress({ responses });
@@ -371,6 +424,7 @@ accuracyEl.addEventListener("input", () => {
     accuracy: state.accuracy,
     confidence: state.confidence,
     shareIntent: state.shareIntent,
+    factChecked: state.factChecked,
     startTime: state.startTime
   };
   saveTaskProgress({ responses });
@@ -387,6 +441,7 @@ confidenceEl.addEventListener("input", () => {
     accuracy: state.accuracy,
     confidence: state.confidence,
     shareIntent: state.shareIntent,
+    factChecked: state.factChecked,
     startTime: state.startTime
   };
   saveTaskProgress({ responses });
@@ -402,6 +457,7 @@ shareSel.addEventListener("input", () => {
     accuracy: state.accuracy,
     confidence: state.confidence,
     shareIntent: state.shareIntent,
+    factChecked: state.factChecked,
     startTime: state.startTime
   };
   saveTaskProgress({ responses });
@@ -430,6 +486,7 @@ submitBtn.addEventListener("click", async () => {
     action: state.action,
     accuracy: state.accuracy,
     shareIntent: state.shareIntent,
+    factChecked: state.factChecked,
     dwellMs,
     post: {
       id: post.id,
@@ -471,6 +528,7 @@ submitBtn.addEventListener("click", async () => {
     accuracy: state.accuracy,
     confidence: state.confidence,
     shareIntent: state.shareIntent,
+    factChecked: state.factChecked,
     startTime: state.startTime,
     submitted: true
   };
@@ -484,6 +542,7 @@ submitBtn.addEventListener("click", async () => {
     state.accuracy = 3;
     state.confidence = 3;
     state.shareIntent = "";
+    state.factChecked = "";
     state.startTime = performance.now();
     saveTaskProgress({ currentIndex });
     renderPost(currentIndex);        

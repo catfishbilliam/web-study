@@ -1,4 +1,4 @@
-const ENDPOINT = "https://script.google.com/macros/s/AKfycbyI-OeUgLbyZjc51xcl3A23VcQnd61NjZmpOSTXrtbvsQ_9AW3S7lO5t-o-4iuWkyOzIg/exec";
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbxD99yPVm5pmwDaEQItek4-vWGFVA_WlMHfVRR6giFTmRd4dafqYNSApaCbQnWn-p_K2A/exec";
 const NEXT_URL = "task.html";
 const TOKEN = (() => {
   const qs = new URLSearchParams(location.search);
